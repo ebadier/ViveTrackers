@@ -11,7 +11,7 @@ namespace ViveTrackers
 	/// This class is used to manage Vive Tracker devices using OpenVR API.
 	/// To run correctly, this class needs SteamVR application to run on the same computer.
 	/// 1) To create the trackers, call the RefreshTrackers() method. This method can be called multiple times during runtime.
-	/// - You can define a set of Vive Tracker to create during runtime using the config file ViveTrackers.csv.
+	/// - You can define a restricted set of Vive Tracker to create during runtime using the config file ViveTrackers.csv.
 	/// - Using the config file or not, only the available connected devices in SteamVR are instantiated during runtime.
 	/// 2) Once the trackers are created, you can update trackers'transforms using the UpdateTrackers() method.
 	/// Example of config file content (# is used to comment):
@@ -26,30 +26,29 @@ namespace ViveTrackers
 	{
 		[Tooltip("Template used to instantiate available trackers")]
 		public ViveTracker prefab;
-		[Tooltip("The origin of the tracking space (=target direction to calibrate Trackers' orientations")]
+		[Tooltip("The origin of the tracking space (+ used as the default rotation to calibrate Trackers' rotations")]
 		public DebugTransform origin;
-		[Tooltip("The path of the file containing the list of the defined set of trackers to use")]
+		[Tooltip("The path of the file containing the list of the restricted set of trackers to use")]
 		public string configFilePath = "ViveTrackers.csv";
 		[Tooltip("True, to create only the trackers declared in the config file. False, to create all connected trackers available in SteamVR.")]
-		public bool createDeclaredTrackersOnly = true;
+		public bool createDeclaredTrackersOnly = false;
 		[Tooltip("Log tracker detection or not. Useful to discover trackers' serial numbers")]
-		public bool logTrackersDetection = false;
+		public bool logTrackersDetection = true;
 
 		private bool _ovrInit = false;
-		private CVRSystem _cvrSystem;
-		private Dictionary<string, string> _declaredTrackers; // Trackers declared in config file [TrackedDevice_SerialNumber, Name]
-		private List<ViveTracker> _trackers; // The list of all instantiated trackers.
-		private TrackedDevicePose_t[] _ovrTrackedDevicePoses; // Poses for all tracked devices in OpenVR (HMDs, controllers, trackers, etc...).
+		private CVRSystem _cvrSystem = null;
+		// Trackers declared in config file [TrackedDevice_SerialNumber, Name]
+		private Dictionary<string, string> _declaredTrackers = new Dictionary<string, string>();
+		// All trackers found during runtime (no duplicates), after successive calls to RefreshTrackers().
+		private List<ViveTracker> _trackers = new List<ViveTracker>();
+		// Poses for all tracked devices in OpenVR (HMDs, controllers, trackers, etc...).
+		private TrackedDevicePose_t[] _ovrTrackedDevicePoses = new TrackedDevicePose_t[OpenVR.k_unMaxTrackedDeviceCount];
 
 		public Action<List<ViveTracker>> TrackersFound; // This callback is called everytime you call the RefreshTrackers() method.
 
 		private void Awake()
 		{
-			_trackers = new List<ViveTracker>();
-			_ovrTrackedDevicePoses = new TrackedDevicePose_t[OpenVR.k_unMaxTrackedDeviceCount];
-
 			// Read config file
-			_declaredTrackers = new Dictionary<string, string>();
 			using (StreamReader reader = File.OpenText(configFilePath))
 			{
 				// Read Header
@@ -69,10 +68,10 @@ namespace ViveTrackers
 
 		public void SetDebugActive(bool pActive)
 		{
-			origin.SetActive(pActive);
+			origin.SetDebugActive(pActive);
 			foreach (ViveTracker tracker in _trackers)
 			{
-				tracker.debugTransform.SetActive(pActive);
+				tracker.debugTransform.SetDebugActive(pActive);
 			}
 		}
 
@@ -95,7 +94,6 @@ namespace ViveTrackers
 			{
 				return;
 			}
-
 			// Fetch last Vive Tracker devices poses.
 			_cvrSystem.GetDeviceToAbsoluteTrackingPose(ETrackingUniverseOrigin.TrackingUniverseStanding, 0, _ovrTrackedDevicePoses);
 			// Apply poses to ViveTracker objects.
@@ -153,11 +151,12 @@ namespace ViveTrackers
 						if (!_trackers.Exists(tracker => tracker.ID.TrackedDevice_SerialNumber == sn))
 						{
 							string trackerName = "";
-							if (_declaredTrackers.TryGetValue(sn, out trackerName) || !createDeclaredTrackersOnly)
+							bool declared = _declaredTrackers.TryGetValue(sn, out trackerName);
+							// Creates only trackers declared in config file or all (if !createDeclaredTrackersOnly).
+							if (declared || !createDeclaredTrackersOnly)
 							{
-								// Creates only trackers declared in config file or all (if !createDeclaredTrackersOnly).
 								ViveTracker vt = GameObject.Instantiate<ViveTracker>(prefab, origin.transform.position, origin.transform.rotation, origin.transform);
-								vt.Init(_cvrSystem, new ViveTrackerID(i, sn), trackerName);
+								vt.Init(_cvrSystem, new ViveTrackerID(i, sn), declared ? trackerName : sn);
 								_trackers.Add(vt);
 							}
 						}

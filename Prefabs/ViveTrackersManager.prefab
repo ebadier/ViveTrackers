@@ -55,8 +55,8 @@ MonoBehaviour:
   prefab: {fileID: 114684623029943448, guid: 83a7a9dced192ca42bd5354aad2d6f6c, type: 2}
   origin: {fileID: 0}
   configFilePath: ./Assets/Externals/ViveTrackers/Scripts/ViveTrackers.csv
-  createDeclaredTrackersOnly: 1
-  logTrackersDetection: 0
+  createDeclaredTrackersOnly: 0
+  logTrackersDetection: 1
 --- !u!114 &114441889267213706
 MonoBehaviour:
   m_ObjectHideFlags: 1

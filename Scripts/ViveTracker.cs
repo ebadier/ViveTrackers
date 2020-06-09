@@ -27,9 +27,9 @@ namespace ViveTrackers
 		public Action<ViveTracker> Calibrated;
 		public bool IsConnected { get { return (_cvrSystem != null) && _cvrSystem.IsTrackedDeviceConnected(ID.TrackedDevice_Index); } }
 
-		private CVRSystem _cvrSystem;
+		private CVRSystem _cvrSystem = null;
 		private bool _calibrate = false;
-		private Transform _transform;
+		private Transform _transform = null;
 		private Quaternion _trackerRotationOffset = Quaternion.identity;
 
 		public void Init(CVRSystem pCVRSystem, ViveTrackerID pID, string pName)

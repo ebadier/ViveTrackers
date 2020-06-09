@@ -8,8 +8,8 @@ public sealed class DebugTransform : MonoBehaviour
 	private GameObject _debugModel;
 
 	// Cached
-	private Transform _debugTextTransform;
-	private Transform _billboardCameraTransform;
+	private Transform _debugTextTransform = null;
+	private Transform _billboardCameraTransform = null;
 
 	public void Init(string pName, Color pColor, Transform pBillboardCameraTransform)
 	{
@@ -21,9 +21,11 @@ public sealed class DebugTransform : MonoBehaviour
 		_billboardCameraTransform = pBillboardCameraTransform;
 	}
 
-	public void SetActive(bool pActive)
+	public void SetDebugActive(bool pActive)
 	{
-		gameObject.SetActive(pActive);
+		_debugText.gameObject.SetActive(pActive);
+		_debugModel.gameObject.SetActive(pActive);
+		enabled = pActive;
 	}
 
 	private void Update()

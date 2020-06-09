@@ -7,14 +7,16 @@ namespace ViveTrackers
 	{
 		public ViveTrackersManager viveTrackersManager;
 
-		private Transform _mainCameraTransform;
+		private Transform _mainCameraTransform = null;
 		private bool _debugActive = true;
+		private List<ViveTracker> _initializedTrackers = new List<ViveTracker>();
 
-		private void Awake()
+		private void Start()
 		{
 			_mainCameraTransform = Camera.main.transform;
 			viveTrackersManager.origin.Init("O", Color.white, _mainCameraTransform);
 			viveTrackersManager.TrackersFound += _OnTrackersFound;
+			viveTrackersManager.RefreshTrackers();
 		}
 
 		private void Update()
@@ -40,8 +42,12 @@ namespace ViveTrackers
 		{
 			foreach (ViveTracker viveTracker in pTrackers)
 			{
-				viveTracker.debugTransform.Init(viveTracker.name, Random.ColorHSV(), _mainCameraTransform);
-				viveTracker.Calibrated += _OnTrackerCalibrated;
+				if(!_initializedTrackers.Exists(vt => vt.name == viveTracker.name))
+				{
+					viveTracker.debugTransform.Init(viveTracker.name, Random.ColorHSV(), _mainCameraTransform);
+					viveTracker.Calibrated += _OnTrackerCalibrated;
+					_initializedTrackers.Add(viveTracker);
+				}
 			}
 		}
 
