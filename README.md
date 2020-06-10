@@ -1,6 +1,6 @@
 ![alt text](Doc/ViveTrackers_Doc.png)
 
-## ViveTrackers for Unity3D allows you to use HTC Vive Tracker devices in Unity3D with the following advantages :
+## Use HTC Vive Tracker devices in Unity3D with the following advantages :
 - Directly use OpenVR API for best performance
 - Small library, easy to integrate in any projects
 - A complete test scene to understand the use of the library
