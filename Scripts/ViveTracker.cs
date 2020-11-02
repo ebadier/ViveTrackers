@@ -50,6 +50,12 @@ namespace ViveTrackers
 		private Transform _transform = null;
 		private Quaternion _trackerRotationOffset = Quaternion.identity;
 
+		public Quaternion Calibration
+		{
+			get { return _trackerRotationOffset; }
+			set { _trackerRotationOffset = value; }
+		}
+
 		public void Init(CVRSystem pCVRSystem, ViveTrackerID pID, string pName)
 		{
 			_cvrSystem = pCVRSystem;

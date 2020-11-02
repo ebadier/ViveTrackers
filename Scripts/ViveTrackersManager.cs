@@ -52,6 +52,8 @@ namespace ViveTrackers
 		public bool createDeclaredTrackersOnly = false;
 		[Tooltip("Log tracker detection or not. Useful to discover trackers' serial numbers")]
 		public bool logTrackersDetection = true;
+		[Tooltip("The path of the file containing the calibrations of the lastly used trackers")]
+		public string calibFilePath = "ViveTrackers_Calibrations.csv";
 
 		private bool _ovrInit = false;
 		private CVRSystem _cvrSystem = null;
@@ -134,6 +136,58 @@ namespace ViveTrackers
 			{
 				tracker.Calibrate();
 			}
+		}
+
+		/// <summary>
+		/// Save trackers calibrations to file.
+		/// </summary>
+		public void SaveTrackersCalibrations()
+		{
+			// Overwrite any existing file.
+			using (StreamWriter writer = new StreamWriter(calibFilePath, false, Encoding.Default))
+			{
+				Quaternion calib;
+				foreach (ViveTracker tracker in _trackers)
+				{
+					calib = tracker.Calibration;
+					writer.WriteLine(string.Format("{0};{1};{2};{3};{4}", tracker.name, calib.x, calib.y, calib.z, calib.w));
+				}
+			}
+			Debug.Log("[ViveTrackersManager] " + _trackers.Count + " trackers calibrations saved to file : " + calibFilePath);
+		}
+
+		/// <summary>
+		/// Load trackers calibrations from file.
+		/// </summary>
+		public void LoadTrackersCalibrations()
+		{
+			int successCount = 0;
+			// Read calib file
+			if(File.Exists(calibFilePath))
+			{
+				using (StreamReader reader = File.OpenText(calibFilePath))
+				{
+					// Read Data
+					string line;
+					while ((line = reader.ReadLine()) != null)
+					{
+						string[] items = line.Split(';');
+						string trackerName = items[0];
+						float qx = float.Parse(items[1]);
+						float qy = float.Parse(items[2]);
+						float qz = float.Parse(items[3]);
+						float qw = float.Parse(items[4]);
+						// Set Calibration to the existing tracker.
+						ViveTracker tracker = _trackers.Find(trckr => trckr.name == trackerName);
+						if (tracker != null)
+						{
+							tracker.Calibration = new Quaternion(qx, qy, qz, qw);
+							++successCount;
+						}
+					}
+				}
+			}
+			Debug.Log("[ViveTrackersManager] " + successCount + " trackers calibrations loaded from file : " + calibFilePath);
 		}
 
 		/// <summary>

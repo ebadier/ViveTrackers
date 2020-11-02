@@ -41,16 +41,24 @@ namespace ViveTrackers
 		{
 			viveTrackersManager.UpdateTrackers();
 
-			if (Input.GetKeyUp(KeyCode.R))
-			{
-				viveTrackersManager.RefreshTrackers();
-			}
-			else if (Input.GetKeyUp(KeyCode.D))
+			if (Input.GetKeyUp(KeyCode.F1))
 			{
 				_debugActive = !_debugActive;
 				viveTrackersManager.SetDebugActive(_debugActive);
 			}
-			else if (Input.GetKeyUp(KeyCode.C))
+			else if (Input.GetKeyUp(KeyCode.F5))
+			{
+				viveTrackersManager.RefreshTrackers();
+			}
+			else if(Input.GetKeyUp(KeyCode.F6))
+			{
+				viveTrackersManager.SaveTrackersCalibrations();
+			}
+			else if (Input.GetKeyUp(KeyCode.F7))
+			{
+				viveTrackersManager.LoadTrackersCalibrations();
+			}
+			else if (Input.GetKeyUp(KeyCode.F8))
 			{
 				viveTrackersManager.CalibrateTrackers();
 			}
