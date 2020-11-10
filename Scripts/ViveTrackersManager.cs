@@ -173,14 +173,14 @@ namespace ViveTrackers
 					{
 						string[] items = line.Split(';');
 						string trackerName = items[0];
-						float qx = float.Parse(items[1]);
-						float qy = float.Parse(items[2]);
-						float qz = float.Parse(items[3]);
-						float qw = float.Parse(items[4]);
 						// Set Calibration to the existing tracker.
 						ViveTracker tracker = _trackers.Find(trckr => trckr.name == trackerName);
 						if (tracker != null)
 						{
+							float qx = float.Parse(items[1]);
+							float qy = float.Parse(items[2]);
+							float qz = float.Parse(items[3]);
+							float qw = float.Parse(items[4]);
 							tracker.Calibration = new Quaternion(qx, qy, qz, qw);
 							++successCount;
 						}
