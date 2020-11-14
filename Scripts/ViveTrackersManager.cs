@@ -16,7 +16,6 @@
 * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.							  *
 ******************************************************************************************************************************************************/
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -40,31 +39,21 @@ namespace ViveTrackers
 	/// #LHR-D5918492;D;
 	/// #LHR-AC3ABE2E;E;
 	/// </summary>
-	public sealed class ViveTrackersManager : MonoBehaviour
+	public sealed class ViveTrackersManager : ViveTrackersManagerBase
 	{
-		[Tooltip("Template used to instantiate available trackers")]
-		public ViveTracker prefab;
-		[Tooltip("The origin of the tracking space (+ used as the default rotation to calibrate Trackers' rotations")]
-		public DebugTransform origin;
 		[Tooltip("The path of the file containing the list of the restricted set of trackers to use")]
 		public string configFilePath = "ViveTrackers.csv";
 		[Tooltip("True, to create only the trackers declared in the config file. False, to create all connected trackers available in SteamVR.")]
 		public bool createDeclaredTrackersOnly = false;
 		[Tooltip("Log tracker detection or not. Useful to discover trackers' serial numbers")]
 		public bool logTrackersDetection = true;
-		[Tooltip("The path of the file containing the calibrations of the lastly used trackers")]
-		public string calibFilePath = "ViveTrackers_Calibrations.csv";
 
 		private bool _ovrInit = false;
 		private CVRSystem _cvrSystem = null;
 		// Trackers declared in config file [TrackedDevice_SerialNumber, Name]
 		private Dictionary<string, string> _declaredTrackers = new Dictionary<string, string>();
-		// All trackers found during runtime (no duplicates), after successive calls to RefreshTrackers().
-		private List<ViveTracker> _trackers = new List<ViveTracker>();
 		// Poses for all tracked devices in OpenVR (HMDs, controllers, trackers, etc...).
 		private TrackedDevicePose_t[] _ovrTrackedDevicePoses = new TrackedDevicePose_t[OpenVR.k_unMaxTrackedDeviceCount];
-
-		public Action<List<ViveTracker>> TrackersFound; // This callback is called everytime you call the RefreshTrackers() method.
 
 		private void Awake()
 		{
@@ -86,16 +75,7 @@ namespace ViveTrackers
 			Debug.Log("[ViveTrackersManager] " + _declaredTrackers.Count + " trackers declared in config file : " + configFilePath);
 		}
 
-		public void SetDebugActive(bool pActive)
-		{
-			origin.SetDebugActive(pActive);
-			foreach (ViveTracker tracker in _trackers)
-			{
-				tracker.debugTransform.SetDebugActive(pActive);
-			}
-		}
-
-		public bool IsTrackerConnected(string pTrackerName)
+		public override bool IsTrackerConnected(string pTrackerName)
 		{
 			if (!_ovrInit)
 			{
@@ -108,7 +88,7 @@ namespace ViveTrackers
 		/// <summary>
 		/// Update ViveTracker transforms using the corresponding Vive Tracker devices.
 		/// </summary>
-		public void UpdateTrackers()
+		public override void UpdateTrackers()
 		{
 			if (!_ovrInit)
 			{
@@ -122,80 +102,26 @@ namespace ViveTrackers
 				TrackedDevicePose_t pose = _ovrTrackedDevicePoses[tracker.ID.TrackedDevice_Index];
 				if (pose.bDeviceIsConnected && pose.bPoseIsValid)
 				{
-					tracker.UpdateTransform(new SteamVR_Utils.RigidTransform(pose.mDeviceToAbsoluteTracking));
+					SteamVR_Utils.RigidTransform rigidTransform = new SteamVR_Utils.RigidTransform(pose.mDeviceToAbsoluteTracking);
+					tracker.UpdateTransform(rigidTransform.pos, rigidTransform.rot);
 				}
 			}
-		}
-
-		/// <summary>
-		/// Align all trackers' transformation with origin's transformation.
-		/// </summary>
-		public void CalibrateTrackers()
-		{
-			foreach (var tracker in _trackers)
-			{
-				tracker.Calibrate();
-			}
-		}
-
-		/// <summary>
-		/// Save trackers calibrations to file.
-		/// </summary>
-		public void SaveTrackersCalibrations()
-		{
-			// Overwrite any existing file.
-			using (StreamWriter writer = new StreamWriter(calibFilePath, false, Encoding.Default))
-			{
-				Quaternion calib;
-				foreach (ViveTracker tracker in _trackers)
-				{
-					calib = tracker.Calibration;
-					writer.WriteLine(string.Format("{0};{1};{2};{3};{4}", tracker.name, calib.x, calib.y, calib.z, calib.w));
-				}
-			}
-			Debug.Log("[ViveTrackersManager] " + _trackers.Count + " trackers calibrations saved to file : " + calibFilePath);
-		}
-
-		/// <summary>
-		/// Load trackers calibrations from file.
-		/// </summary>
-		public void LoadTrackersCalibrations()
-		{
-			int successCount = 0;
-			// Read calib file
-			if(File.Exists(calibFilePath))
-			{
-				using (StreamReader reader = File.OpenText(calibFilePath))
-				{
-					// Read Data
-					string line;
-					while ((line = reader.ReadLine()) != null)
-					{
-						string[] items = line.Split(';');
-						string trackerName = items[0];
-						// Set Calibration to the existing tracker.
-						ViveTracker tracker = _trackers.Find(trckr => trckr.name == trackerName);
-						if (tracker != null)
-						{
-							float qx = float.Parse(items[1]);
-							float qy = float.Parse(items[2]);
-							float qz = float.Parse(items[3]);
-							float qw = float.Parse(items[4]);
-							tracker.Calibration = new Quaternion(qx, qy, qz, qw);
-							++successCount;
-						}
-					}
-				}
-			}
-			Debug.Log("[ViveTrackersManager] " + successCount + " trackers calibrations loaded from file : " + calibFilePath);
 		}
 
 		/// <summary>
 		/// Scan for available Vive Tracker devices and creates ViveTracker objects accordingly.
 		/// Init OpenVR if not already done.
 		/// </summary>
-		public void RefreshTrackers()
+		public override void RefreshTrackers()
 		{
+			// Delete existing ViveTrackers
+			foreach (ViveTracker tracker in _trackers)
+			{
+				Destroy(tracker.gameObject);
+			}
+			_trackers.Clear();
+
+			// OVR check
 			if (!_ovrInit)
 			{
 				_ovrInit = _InitOpenVR();
@@ -219,18 +145,14 @@ namespace ViveTrackers
 
 					if (sn != "")
 					{
-						// Creates tracker object if not already existing.
-						if (!_trackers.Exists(tracker => tracker.ID.TrackedDevice_SerialNumber == sn))
+						string trackerName = "";
+						bool declared = _declaredTrackers.TryGetValue(sn, out trackerName);
+						// Creates only trackers declared in config file or all (if !createDeclaredTrackersOnly).
+						if (declared || !createDeclaredTrackersOnly)
 						{
-							string trackerName = "";
-							bool declared = _declaredTrackers.TryGetValue(sn, out trackerName);
-							// Creates only trackers declared in config file or all (if !createDeclaredTrackersOnly).
-							if (declared || !createDeclaredTrackersOnly)
-							{
-								ViveTracker vt = GameObject.Instantiate<ViveTracker>(prefab, origin.transform.position, origin.transform.rotation, origin.transform);
-								vt.Init(_cvrSystem, new ViveTrackerID(i, sn), declared ? trackerName : sn);
-								_trackers.Add(vt);
-							}
+							ViveTracker vt = GameObject.Instantiate<ViveTracker>(prefab, origin.transform.position, origin.transform.rotation, origin.transform);
+							vt.Init(_cvrSystem, new ViveTrackerID(i, sn), declared ? trackerName : sn);
+							_trackers.Add(vt);
 						}
 					}
 				}
@@ -247,7 +169,7 @@ namespace ViveTrackers
 			_trackers.Sort((ViveTracker x, ViveTracker y) => { return string.Compare(x.name, y.name); });
 
 			Debug.Log(string.Format("[ViveTrackersManager] {0} trackers declared and {1} trackers available:", _declaredTrackers.Count, _trackers.Count));
-			foreach (var tracker in _trackers)
+			foreach (ViveTracker tracker in _trackers)
 			{
 				Debug.Log(string.Format("[ViveTrackersManager] -> Tracker : Name = {0} ; SN = {1} ; Index = {2}", tracker.name, tracker.ID.TrackedDevice_SerialNumber, tracker.ID.TrackedDevice_Index));
 			}

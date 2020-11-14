@@ -23,44 +23,56 @@ namespace ViveTrackers
 {
 	public sealed class ViveTrackersTest : MonoBehaviour
 	{
+		public bool useFake = false;
 		public ViveTrackersManager viveTrackersManager;
+		public ViveTrackersManagerFake viveTrackersManagerFake;
 
+		private ViveTrackersManagerBase _activeViveTrackersManager;
 		private Transform _mainCameraTransform = null;
 		private bool _debugActive = true;
-		private List<ViveTracker> _initializedTrackers = new List<ViveTracker>();
 
 		private void Start()
 		{
 			_mainCameraTransform = Camera.main.transform;
-			viveTrackersManager.origin.Init("O", Color.white, _mainCameraTransform);
-			viveTrackersManager.TrackersFound += _OnTrackersFound;
-			viveTrackersManager.RefreshTrackers();
+			if(useFake)
+			{
+				_activeViveTrackersManager = viveTrackersManagerFake;
+				viveTrackersManager.gameObject.SetActive(false);
+			}
+			else
+			{
+				_activeViveTrackersManager = viveTrackersManager;
+				viveTrackersManagerFake.gameObject.SetActive(false);
+			}
+			_activeViveTrackersManager.origin.Init("O", Color.white, _mainCameraTransform);
+			_activeViveTrackersManager.TrackersFound += _OnTrackersFound;
+			_activeViveTrackersManager.RefreshTrackers();
 		}
 
 		private void Update()
 		{
-			viveTrackersManager.UpdateTrackers();
+			_activeViveTrackersManager.UpdateTrackers();
 
 			if (Input.GetKeyUp(KeyCode.F1))
 			{
 				_debugActive = !_debugActive;
-				viveTrackersManager.SetDebugActive(_debugActive);
+				_activeViveTrackersManager.SetDebugActive(_debugActive);
 			}
 			else if (Input.GetKeyUp(KeyCode.F5))
 			{
-				viveTrackersManager.RefreshTrackers();
+				_activeViveTrackersManager.RefreshTrackers();
 			}
 			else if(Input.GetKeyUp(KeyCode.F6))
 			{
-				viveTrackersManager.SaveTrackersCalibrations();
+				_activeViveTrackersManager.SaveTrackersCalibrations();
 			}
 			else if (Input.GetKeyUp(KeyCode.F7))
 			{
-				viveTrackersManager.LoadTrackersCalibrations();
+				_activeViveTrackersManager.LoadTrackersCalibrations();
 			}
 			else if (Input.GetKeyUp(KeyCode.F8))
 			{
-				viveTrackersManager.CalibrateTrackers();
+				_activeViveTrackersManager.CalibrateTrackers();
 			}
 		}
 
@@ -68,12 +80,16 @@ namespace ViveTrackers
 		{
 			foreach (ViveTracker viveTracker in pTrackers)
 			{
-				if(!_initializedTrackers.Exists(vt => vt.name == viveTracker.name))
-				{
-					viveTracker.debugTransform.Init(viveTracker.name, Random.ColorHSV(), _mainCameraTransform);
-					viveTracker.Calibrated += _OnTrackerCalibrated;
-					_initializedTrackers.Add(viveTracker);
-				}
+				Color color = Random.ColorHSV();
+				viveTracker.debugTransform.Init(viveTracker.name, color, _mainCameraTransform);
+				viveTracker.Calibrated += _OnTrackerCalibrated;
+				// Attach a sphere to the tracker.
+				GameObject renderer = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+				renderer.transform.parent = viveTracker.transform;
+				renderer.transform.localPosition = Vector3.zero;
+				renderer.transform.localRotation = Quaternion.identity;
+				renderer.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+				renderer.GetComponent<Renderer>().material.color = color;
 			}
 		}
 

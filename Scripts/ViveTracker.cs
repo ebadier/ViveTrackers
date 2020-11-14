@@ -75,12 +75,11 @@ namespace ViveTrackers
 		/// <summary>
 		/// Update transformation using ViveTracker device transformation.
 		/// </summary>
-		/// <param name="pTrans"></param>
-		public void UpdateTransform(SteamVR_Utils.RigidTransform pTrans)
+		public void UpdateTransform(Vector3 pLocalPosition, Quaternion pLocalRotation)
 		{
 			if (_calibrate)
 			{
-				_trackerRotationOffset = Quaternion.Inverse(pTrans.rot);
+				_trackerRotationOffset = Quaternion.Inverse(pLocalRotation);
 				_calibrate = false;
 
 				if (Calibrated != null)
@@ -88,8 +87,8 @@ namespace ViveTrackers
 					Calibrated(this);
 				}
 			}
-			_transform.localPosition = pTrans.pos;
-			_transform.localRotation = pTrans.rot * _trackerRotationOffset;
+			_transform.localPosition = pLocalPosition;
+			_transform.localRotation = pLocalRotation * _trackerRotationOffset;
 		}
 	}
 }
