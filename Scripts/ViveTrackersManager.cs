@@ -75,16 +75,6 @@ namespace ViveTrackers
 			Debug.Log("[ViveTrackersManager] " + _declaredTrackers.Count + " trackers declared in config file : " + configFilePath);
 		}
 
-		public override bool IsTrackerConnected(string pTrackerName)
-		{
-			if (!_ovrInit)
-			{
-				return false;
-			}
-			ViveTracker tracker = _trackers.Find(trck => trck.name == pTrackerName);
-			return (tracker != null) && tracker.IsConnected;
-		}
-
 		/// <summary>
 		/// Update ViveTracker transforms using the corresponding Vive Tracker devices.
 		/// </summary>
@@ -100,11 +90,8 @@ namespace ViveTrackers
 			foreach (var tracker in _trackers)
 			{
 				TrackedDevicePose_t pose = _ovrTrackedDevicePoses[tracker.ID.TrackedDevice_Index];
-				if (pose.bDeviceIsConnected && pose.bPoseIsValid)
-				{
-					SteamVR_Utils.RigidTransform rigidTransform = new SteamVR_Utils.RigidTransform(pose.mDeviceToAbsoluteTracking);
-					tracker.UpdateTransform(rigidTransform.pos, rigidTransform.rot);
-				}
+				SteamVR_Utils.RigidTransform rigidTransform = new SteamVR_Utils.RigidTransform(pose.mDeviceToAbsoluteTracking);
+				tracker.UpdateState(pose.bDeviceIsConnected && pose.bPoseIsValid && (pose.eTrackingResult == ETrackingResult.Running_OK), rigidTransform.pos, rigidTransform.rot);
 			}
 		}
 
@@ -151,7 +138,7 @@ namespace ViveTrackers
 						if (declared || !createDeclaredTrackersOnly)
 						{
 							ViveTracker vt = GameObject.Instantiate<ViveTracker>(prefab, origin.transform.position, origin.transform.rotation, origin.transform);
-							vt.Init(_cvrSystem, new ViveTrackerID(i, sn), declared ? trackerName : sn);
+							vt.Init(new ViveTrackerID(i, sn), declared ? trackerName : sn);
 							_trackers.Add(vt);
 						}
 					}

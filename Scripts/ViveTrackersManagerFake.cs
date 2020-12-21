@@ -60,12 +60,6 @@ namespace ViveTrackers
 			}
 		}
 
-		public override bool IsTrackerConnected(string pTrackerName)
-		{
-			// Fake Trackers don't rely on any connection.
-			return _trackers.Find(trck => trck.name == pTrackerName) != null;
-		}
-
 		/// <summary>
 		/// Update fake ViveTrackers' transforms procedurally.
 		/// </summary>
@@ -91,7 +85,7 @@ namespace ViveTrackers
 					motion = -motion;
 					newPos = pos + motion;
 				}
-				_trackers[i].UpdateTransform(newPos, Quaternion.LookRotation(dir, Vector3.up));
+				_trackers[i].UpdateState(true, newPos, Quaternion.LookRotation(dir, Vector3.up));
 			}
 		}
 
@@ -116,7 +110,7 @@ namespace ViveTrackers
 				Vector2 pos = Random.insideUnitCircle * 0.5f;
 				Vector3 startPos = new Vector3(pos.x, targetsHeight, pos.y);
 				ViveTracker vt = Instantiate<ViveTracker>(prefab, origin.transform.TransformPoint(startPos), Quaternion.identity, origin.transform);
-				vt.Init(null, new ViveTrackerID((uint)_trackers.Count, trackerName.ToString()), trackerName.ToString());
+				vt.Init(new ViveTrackerID((uint)_trackers.Count, trackerName.ToString()), trackerName.ToString());
 				_trackers.Add(vt);
 				_trackerDurations.Add(0f);
 				_trackerElapsedTimes.Add(0f);

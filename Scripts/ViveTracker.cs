@@ -18,7 +18,6 @@
 
 using System;
 using UnityEngine;
-using Valve.VR;
 
 namespace ViveTrackers
 {
@@ -41,25 +40,24 @@ namespace ViveTrackers
 	{
 		public DebugTransform debugTransform;
 		public ViveTrackerID ID { get; private set; }
-
-		public Action<ViveTracker> Calibrated;
-		public bool IsConnected { get { return (_cvrSystem != null) && _cvrSystem.IsTrackedDeviceConnected(ID.TrackedDevice_Index); } }
-
-		private CVRSystem _cvrSystem = null;
-		private bool _calibrate = false;
-		private Transform _transform = null;
-		private Quaternion _trackerRotationOffset = Quaternion.identity;
-
+		public bool IsTracked { get; private set; }
 		public Quaternion Calibration
 		{
 			get { return _trackerRotationOffset; }
 			set { _trackerRotationOffset = value; }
 		}
 
-		public void Init(CVRSystem pCVRSystem, ViveTrackerID pID, string pName)
+		public Action<bool> TrackedStateChanged;
+		public Action<ViveTracker> Calibrated;
+
+		private bool _calibrate = false;
+		private Transform _transform = null;
+		private Quaternion _trackerRotationOffset = Quaternion.identity;
+
+		public void Init(ViveTrackerID pID, string pName)
 		{
-			_cvrSystem = pCVRSystem;
 			_transform = transform;
+			IsTracked = false;
 			ID = pID;
 			name = pName;
 		}
@@ -73,22 +71,36 @@ namespace ViveTrackers
 		}
 
 		/// <summary>
-		/// Update transformation using ViveTracker device transformation.
+		/// Update ViveTracker.
 		/// </summary>
-		public void UpdateTransform(Vector3 pLocalPosition, Quaternion pLocalRotation)
+		public void UpdateState(bool pIsTracked, Vector3 pLocalPosition, Quaternion pLocalRotation)
 		{
-			if (_calibrate)
+			// Warn if tracked state changed.
+			if(IsTracked != pIsTracked)
 			{
-				_trackerRotationOffset = Quaternion.Inverse(pLocalRotation);
-				_calibrate = false;
-
-				if (Calibrated != null)
+				if(TrackedStateChanged != null)
 				{
-					Calibrated(this);
+					TrackedStateChanged(pIsTracked);
 				}
 			}
-			_transform.localPosition = pLocalPosition;
-			_transform.localRotation = pLocalRotation * _trackerRotationOffset;
+			IsTracked = pIsTracked;
+
+			// Update only if tracker successfully tracked.
+			if (pIsTracked)
+			{
+				if (_calibrate)
+				{
+					_trackerRotationOffset = Quaternion.Inverse(pLocalRotation);
+					_calibrate = false;
+
+					if (Calibrated != null)
+					{
+						Calibrated(this);
+					}
+				}
+				_transform.localPosition = pLocalPosition;
+				_transform.localRotation = pLocalRotation * _trackerRotationOffset;
+			}
 		}
 	}
 }

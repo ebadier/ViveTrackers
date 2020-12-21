@@ -42,11 +42,6 @@ namespace ViveTrackers
 		public Action<List<ViveTracker>> TrackersFound; // This callback is called everytime you call the RefreshTrackers() method.
 
 		/// <summary>
-		/// Return whether the given tracker is connected.
-		/// </summary>
-		public abstract bool IsTrackerConnected(string pTrackerName);
-
-		/// <summary>
 		/// Update ViveTracker transforms.
 		/// </summary>
 		public abstract void UpdateTrackers();
