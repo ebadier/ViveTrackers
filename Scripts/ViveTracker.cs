@@ -85,7 +85,9 @@ namespace ViveTrackers
 			}
 			IsTracked = pIsTracked;
 
-			// Update only if tracker successfully tracked.
+			// Update only if the tracker is successfully tracked. 
+			// This way, the tracker can keep its last transform when the tracking is lost.
+			// If tracking is lost, OpenVR sends zeros position and orientation and we don't want to use these zeros values (ghost trajectories).
 			if (pIsTracked)
 			{
 				if (_calibrate)
