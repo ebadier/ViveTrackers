@@ -89,7 +89,7 @@ namespace ViveTrackers
 			// Apply poses to ViveTracker objects.
 			foreach (var tracker in _trackers)
 			{
-				TrackedDevicePose_t pose = _ovrTrackedDevicePoses[tracker.ID.TrackedDevice_Index];
+				TrackedDevicePose_t pose = _ovrTrackedDevicePoses[tracker.ID.trackedDevice_Index];
 				SteamVR_Utils.RigidTransform rigidTransform = new SteamVR_Utils.RigidTransform(pose.mDeviceToAbsoluteTracking);
 				tracker.UpdateState(pose.bDeviceIsConnected, pose.bPoseIsValid, (pose.eTrackingResult == ETrackingResult.Running_OK), 
 					rigidTransform.pos, rigidTransform.rot, pDeltaTime);
@@ -159,7 +159,7 @@ namespace ViveTrackers
 			Debug.Log(string.Format("[ViveTrackersManager] {0} trackers declared and {1} trackers available:", _declaredTrackers.Count, _trackers.Count));
 			foreach (ViveTracker tracker in _trackers)
 			{
-				Debug.Log(string.Format("[ViveTrackersManager] -> Tracker : Name = {0} ; SN = {1} ; Index = {2}", tracker.name, tracker.ID.TrackedDevice_SerialNumber, tracker.ID.TrackedDevice_Index));
+				Debug.Log(string.Format("[ViveTrackersManager] -> Tracker : Name = {0} ; SN = {1} ; Index = {2}", tracker.name, tracker.ID.trackedDevice_SerialNumber, tracker.ID.trackedDevice_Index));
 			}
 
 			// Fire Action.

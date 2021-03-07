@@ -21,15 +21,15 @@ using UnityEngine;
 
 namespace ViveTrackers
 {
-	public sealed class ViveTrackerID
+	public struct ViveTrackerID
 	{
-		public uint TrackedDevice_Index { get; private set; }
-		public string TrackedDevice_SerialNumber { get; private set; }
+		public readonly uint trackedDevice_Index;
+		public readonly string trackedDevice_SerialNumber;
 
 		public ViveTrackerID(uint pTrackedDevice_Index, string pTrackedDevice_SerialNumber)
 		{
-			TrackedDevice_Index = pTrackedDevice_Index;
-			TrackedDevice_SerialNumber = pTrackedDevice_SerialNumber;
+			trackedDevice_Index = pTrackedDevice_Index;
+			trackedDevice_SerialNumber = pTrackedDevice_SerialNumber;
 		}
 	}
 
@@ -81,12 +81,9 @@ namespace ViveTrackers
 			//	name, pIsConnected, pIsPoseValid, pIsOpticallyTracked, isTracked));
 
 			// Warn if tracked state changed.
-			if (IsTracked != isTracked)
+			if ((IsTracked != isTracked) && (TrackedStateChanged != null))
 			{
-				if(TrackedStateChanged != null)
-				{
-					TrackedStateChanged(isTracked);
-				}
+				TrackedStateChanged(isTracked);
 			}
 			IsTracked = isTracked;
 

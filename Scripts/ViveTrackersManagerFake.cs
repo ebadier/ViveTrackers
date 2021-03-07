@@ -119,7 +119,7 @@ namespace ViveTrackers
 			Debug.Log(string.Format("[ViveTrackersManagerFake] {0} trackers created:", _trackers.Count));
 			foreach (ViveTracker tracker in _trackers)
 			{
-				Debug.Log(string.Format("[ViveTrackersManagerFake] -> Tracker : Name = {0} ; SN = {1} ; Index = {2}", tracker.name, tracker.ID.TrackedDevice_SerialNumber, tracker.ID.TrackedDevice_Index));
+				Debug.Log(string.Format("[ViveTrackersManagerFake] -> Tracker : Name = {0} ; SN = {1} ; Index = {2}", tracker.name, tracker.ID.trackedDevice_SerialNumber, tracker.ID.trackedDevice_Index));
 			}
 
 			// Fire Action.

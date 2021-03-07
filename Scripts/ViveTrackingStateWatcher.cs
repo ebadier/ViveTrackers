@@ -52,8 +52,8 @@ namespace ViveTrackers
 			}
 			else if (isPartiallyTracked && _wasReliablyTracked)
 			{
-				_elapsedTimeSinceLastFullTrack += pDeltaTime; // count time while optical tracking lost
-				isReliablyTracked = _elapsedTimeSinceLastFullTrack <= MaxPartiallyTrackedStateDuration;
+				_elapsedTimeSinceLastFullTrack += pDeltaTime; // count time elapsed without optical tracking
+				isReliablyTracked = _elapsedTimeSinceLastFullTrack <= MaxPartiallyTrackedStateDuration; // only this duration without optical tracking is reliable
 			}
 
 			// Save state for next iteration.
