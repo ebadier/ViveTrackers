@@ -63,9 +63,8 @@ namespace ViveTrackers
 		/// <summary>
 		/// Update fake ViveTrackers' transforms procedurally.
 		/// </summary>
-		public override void UpdateTrackers()
+		public override void UpdateTrackers(float pDeltaTime)
 		{
-			float dt = Time.deltaTime;
 			float sqrAreaRadius = areaRadius * areaRadius;
 			Vector3 volumeCenter = new Vector3(0f, targetsHeight, 0f);
 			Vector3 dir, motion;
@@ -74,8 +73,8 @@ namespace ViveTrackers
 			{
 				dir = _trackers[i].transform.localRotation * Vector3.forward;
 				pos = _trackers[i].transform.localPosition;
-				dir = _NextTrackerDirection(i, pos, dir, dt);
-				motion = dir * _trackerSpeeds[i] * dt;
+				dir = _NextTrackerDirection(i, pos, dir, pDeltaTime);
+				motion = dir * _trackerSpeeds[i] * pDeltaTime;
 				newPos = pos + motion;
 				// Check if target will be out of bounds.
 				if ((newPos - volumeCenter).sqrMagnitude > sqrAreaRadius)
@@ -85,7 +84,7 @@ namespace ViveTrackers
 					motion = -motion;
 					newPos = pos + motion;
 				}
-				_trackers[i].UpdateState(true, newPos, Quaternion.LookRotation(dir, Vector3.up));
+				_trackers[i].UpdateState(true, true, true, newPos, Quaternion.LookRotation(dir, Vector3.up), pDeltaTime);
 			}
 		}
 

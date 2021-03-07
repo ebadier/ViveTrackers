@@ -78,7 +78,7 @@ namespace ViveTrackers
 		/// <summary>
 		/// Update ViveTracker transforms using the corresponding Vive Tracker devices.
 		/// </summary>
-		public override void UpdateTrackers()
+		public override void UpdateTrackers(float pDeltaTime)
 		{
 			if (!_ovrInit)
 			{
@@ -91,11 +91,8 @@ namespace ViveTrackers
 			{
 				TrackedDevicePose_t pose = _ovrTrackedDevicePoses[tracker.ID.TrackedDevice_Index];
 				SteamVR_Utils.RigidTransform rigidTransform = new SteamVR_Utils.RigidTransform(pose.mDeviceToAbsoluteTracking);
-				// If optical tracking is lost (pose.eTrackingResult != ETrackingResult.Running_OK), bPoseIsValid is true during a few seconds (in this case tracking is based on inertial tracking only).
-				// Our tests concluded bPoseIsValid only is not enough to ensure a good tracking quality, so better to also check optical tracking.
-				bool isTracked = pose.bDeviceIsConnected && pose.bPoseIsValid && (pose.eTrackingResult == ETrackingResult.Running_OK);
-				tracker.UpdateState(isTracked, rigidTransform.pos, rigidTransform.rot);
-				//Debug.Log(string.Format("{0} | Connected : {1} | PoseValid : {2} | TrackingResult : {3}", tracker.name, pose.bDeviceIsConnected, pose.bPoseIsValid, pose.eTrackingResult == ETrackingResult.Running_OK));
+				tracker.UpdateState(pose.bDeviceIsConnected, pose.bPoseIsValid, (pose.eTrackingResult == ETrackingResult.Running_OK), 
+					rigidTransform.pos, rigidTransform.rot, pDeltaTime);
 			}
 		}
 

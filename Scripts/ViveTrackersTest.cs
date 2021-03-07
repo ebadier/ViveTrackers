@@ -51,7 +51,7 @@ namespace ViveTrackers
 
 		private void Update()
 		{
-			_activeViveTrackersManager.UpdateTrackers();
+			_activeViveTrackersManager.UpdateTrackers(Time.unscaledDeltaTime);
 
 			if (Input.GetKeyUp(KeyCode.F1))
 			{

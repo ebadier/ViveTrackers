@@ -44,7 +44,7 @@ namespace ViveTrackers
 		/// <summary>
 		/// Update ViveTracker transforms.
 		/// </summary>
-		public abstract void UpdateTrackers();
+		public abstract void UpdateTrackers(float pDeltaTime);
 
 		/// <summary>
 		/// Scan for available Vive Tracker devices and creates ViveTracker objects accordingly.

@@ -53,6 +53,7 @@ namespace ViveTrackers
 		private bool _calibrate = false;
 		private Transform _transform = null;
 		private Quaternion _trackerRotationOffset = Quaternion.identity;
+		private ViveTrackingStateWatcher _trackingStateWatcher = new ViveTrackingStateWatcher();
 
 		public void Init(ViveTrackerID pID, string pName)
 		{
@@ -73,22 +74,25 @@ namespace ViveTrackers
 		/// <summary>
 		/// Update ViveTracker.
 		/// </summary>
-		public void UpdateState(bool pIsTracked, Vector3 pLocalPosition, Quaternion pLocalRotation)
+		public void UpdateState(bool pIsConnected, bool pIsPoseValid, bool pIsOpticallyTracked, Vector3 pLocalPosition, Quaternion pLocalRotation, float pDeltaTime)
 		{
+			bool isTracked = _trackingStateWatcher.Update(pIsConnected, pIsPoseValid, pIsOpticallyTracked, pDeltaTime);
+			//Debug.Log(string.Format("{0} | Connected : {1} | PoseValid : {2} | OpticalTracking : {3} | IsTracked : {4}", 
+			//	name, pIsConnected, pIsPoseValid, pIsOpticallyTracked, isTracked));
+
 			// Warn if tracked state changed.
-			if(IsTracked != pIsTracked)
+			if (IsTracked != isTracked)
 			{
 				if(TrackedStateChanged != null)
 				{
-					TrackedStateChanged(pIsTracked);
+					TrackedStateChanged(isTracked);
 				}
 			}
-			IsTracked = pIsTracked;
+			IsTracked = isTracked;
 
-			// Update only if the tracker is successfully tracked. 
-			// This way, the tracker can keep its last transform when the tracking is lost.
-			// If tracking is lost, OpenVR sends zeros position and orientation and we don't want to use these zeros values (ghost trajectories).
-			if (pIsTracked)
+			// Update only if the tracker is tracked.
+			// This way, the tracker keeps its last transform when the tracking is lost (better than a reset of the transform).
+			if (isTracked)
 			{
 				if (_calibrate)
 				{
