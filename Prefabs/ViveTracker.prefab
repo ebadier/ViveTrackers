@@ -226,4 +226,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea47ec4933ceecf45bfa3837f21a1442, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  imuOnlyReliableDuration: 0.033
   debugTransform: {fileID: 114001069092505860}

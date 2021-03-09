@@ -23,43 +23,116 @@ namespace ViveTrackers
 	// This class gives you a reliable tracking state in every situation.
 	public sealed class ViveTrackingStateWatcher
 	{
-		// The maximum duration a tracker can be considered as reliably tracked in a partially tracked state (IMU only).
-		// Our tests shown that only the first second without optical tracking (IMU only) can be considered as a reliable tracking quality.
-		public const float MaxPartiallyTrackedStateDuration = 1f;
-
-		private bool _wasReliablyTracked; // previous tracking state.
+		private bool _wasPositionPartiallyTracked; // previous position's tracking state.
+		private bool _wasPositionReliablyTracked; // previous position's tracking state.
+		private bool _wasRotationReliablyTracked; // previous rotation's tracking state.
 		private float _elapsedTimeSinceLastFullTrack; // Time elapsed in a reliably tracked state since the last time the tracker was fully tracked.
+		private float _elapsedTimeSinceLastInvalidPosition; // Time elapsed in the last reliably tracked state for position.
+		private float _elapsedTimeSinceLastInvalidRotation; // Time elapsed in the last reliably tracked state for rotation.
 
 		public ViveTrackingStateWatcher()
 		{
-			_wasReliablyTracked = false;
-			_elapsedTimeSinceLastFullTrack = 0f;
+			_wasPositionPartiallyTracked = _wasPositionReliablyTracked = _wasRotationReliablyTracked = false;
+			_elapsedTimeSinceLastFullTrack = _elapsedTimeSinceLastInvalidPosition = _elapsedTimeSinceLastInvalidRotation = 0f;
 		}
 
 		/// <summary>
 		/// Update the tracking state and returns whether the tracker can be considered as reliably tracked.
 		/// </summary>
-		public bool Update(bool pIsConnected, bool pIsPoseValid, bool pIsOpticallyTracked, float pDeltaTime)
+		public void Update(out bool pOutPositionValid, out bool pOutRotationValid, bool pIsConnected, bool pIsPoseValid, bool pIsOpticallyTracked, float pDeltaTime, float pIMUOnlyReliablePositionDuration)
 		{
-			bool isReliablyTracked = false;
-
 			bool isPartiallyTracked = pIsConnected && pIsPoseValid; // IMU only.
 			bool isFullyTracked = isPartiallyTracked && pIsOpticallyTracked; // IMU + Optical.
-			if (isFullyTracked)
+
+			pOutPositionValid = _UpdatePositionState(isPartiallyTracked, isFullyTracked, pDeltaTime, pIMUOnlyReliablePositionDuration);
+			pOutRotationValid = _UpdateRotationState(isPartiallyTracked, pDeltaTime);
+		}
+
+		private bool _UpdateRotationState(bool pIsPartiallyTracked, float pDeltaTime)
+		{
+			// IMU only is always enough to get a reliable rotation while pose is valid.
+			bool isRotationReliablyTracked = pIsPartiallyTracked;
+
+			// Save states for next iteration.
+			bool wasRotationReliablyTracked = _wasRotationReliablyTracked;
+			_wasRotationReliablyTracked = isRotationReliablyTracked;
+
+			// Reject unreliable first frames when going from an untracked state to a reliable tracked state.
+			if (isRotationReliablyTracked)
+			{
+				if (wasRotationReliablyTracked)
+				{
+					// count time elapsed since last invalid rotation.
+					_elapsedTimeSinceLastInvalidRotation += pDeltaTime;
+				}
+				else
+				{
+					// reset counter if transitioning from an untracked state to a reliable tracked state.
+					_elapsedTimeSinceLastInvalidRotation = pDeltaTime;
+				}
+				isRotationReliablyTracked = _elapsedTimeSinceLastInvalidRotation > ViveTracker.ImuOnlyMinDuration;
+			}
+
+			// Debug
+			//if (isRotationReliablyTracked)
+			//{
+			//	UnityEngine.Debug.Log("Rotation reliable since : " + _elapsedTimeSinceLastInvalidRotation);
+			//}
+			//else
+			//{
+			//	UnityEngine.Debug.LogWarning("Rotation is not reliable !");
+			//}
+
+			return isRotationReliablyTracked;
+		}
+
+		private bool _UpdatePositionState(bool pIsPartiallyTracked, bool pIsFullyTracked, float pDeltaTime, float pIMUOnlyReliablePositionDuration)
+		{
+			bool isPositionReliablyTracked = false;
+			if (pIsFullyTracked)
 			{
 				_elapsedTimeSinceLastFullTrack = 0f; // reset only when full tracking happens
-				isReliablyTracked = true; // full tracking is always reliable
+				isPositionReliablyTracked = true; // full tracking is always reliable
 			}
-			else if (isPartiallyTracked && _wasReliablyTracked)
+			else if (pIsPartiallyTracked && _wasPositionReliablyTracked)
 			{
 				_elapsedTimeSinceLastFullTrack += pDeltaTime; // count time elapsed without optical tracking
-				isReliablyTracked = _elapsedTimeSinceLastFullTrack <= MaxPartiallyTrackedStateDuration; // only this duration without optical tracking is reliable
+				isPositionReliablyTracked = _elapsedTimeSinceLastFullTrack <= pIMUOnlyReliablePositionDuration; // only this duration without optical tracking is reliable
 			}
 
-			// Save state for next iteration.
-			_wasReliablyTracked = isReliablyTracked;
+			// Save states for next iteration.
+			bool wasPositionPartiallyTracked = _wasPositionPartiallyTracked;
+			bool wasPositionReliablyTracked = _wasPositionReliablyTracked;
+			_wasPositionPartiallyTracked = pIsPartiallyTracked;
+			_wasPositionReliablyTracked = isPositionReliablyTracked;
 
-			return isReliablyTracked;
+			// Reject unreliable first frames when going from an untracked state to a reliable tracked state.
+			if (isPositionReliablyTracked)
+			{
+				if (wasPositionReliablyTracked)
+				{
+					// count time elapsed since the last invalid position.
+					_elapsedTimeSinceLastInvalidPosition += pDeltaTime;
+				}
+				else if (!wasPositionPartiallyTracked)
+				{
+					// reset counter if transitioning from an untracked state to a reliable tracked state.
+					_elapsedTimeSinceLastInvalidPosition = pDeltaTime;
+				}
+				isPositionReliablyTracked = _elapsedTimeSinceLastInvalidPosition > ViveTracker.ImuOnlyMinDuration;
+			}
+
+			// Debug
+			//if (isPositionReliablyTracked)
+			//{
+			//	UnityEngine.Debug.Log("Position reliable since : " + _elapsedTimeSinceLastInvalidPosition);
+			//}
+			//else
+			//{
+			//	UnityEngine.Debug.LogWarning("Position is not reliable !");
+			//}
+
+			return isPositionReliablyTracked;
 		}
 	}
 }

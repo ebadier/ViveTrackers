@@ -38,16 +38,24 @@ namespace ViveTrackers
 	/// </summary>
 	public sealed class ViveTracker : MonoBehaviour
 	{
+		public const float ImuOnlyMinDuration = 0.033f; // = 2 frames @60Hz
+		public const float ImuOnlyMaxDuration = 2f;
+
+		[Range(ImuOnlyMinDuration, ImuOnlyMaxDuration)]
+		[Tooltip("The duration a tracker's position can be considered as reliably tracked with IMU tracking only (no optical tracking). Use min value for data analysis purpose, and up to max value for gameplay purpose.")]
+		public float imuOnlyReliablePositionDuration = ImuOnlyMinDuration;
 		public DebugTransform debugTransform;
 		public ViveTrackerID ID { get; private set; }
-		public bool IsTracked { get; private set; }
+		public bool PositionValid { get; private set; }
+		public bool RotationValid { get; private set; }
 		public Quaternion Calibration
 		{
 			get { return _trackerRotationOffset; }
 			set { _trackerRotationOffset = value; }
 		}
 
-		public Action<bool> TrackedStateChanged;
+		public Action<bool> PositionValidChanged;
+		public Action<bool> RotationValidChanged;
 		public Action<ViveTracker> Calibrated;
 
 		private bool _calibrate = false;
@@ -58,7 +66,7 @@ namespace ViveTrackers
 		public void Init(ViveTrackerID pID, string pName)
 		{
 			_transform = transform;
-			IsTracked = false;
+			PositionValid = RotationValid = false;
 			ID = pID;
 			name = pName;
 		}
@@ -76,20 +84,42 @@ namespace ViveTrackers
 		/// </summary>
 		public void UpdateState(bool pIsConnected, bool pIsPoseValid, bool pIsOpticallyTracked, Vector3 pLocalPosition, Quaternion pLocalRotation, float pDeltaTime)
 		{
-			bool isTracked = _trackingStateWatcher.Update(pIsConnected, pIsPoseValid, pIsOpticallyTracked, pDeltaTime);
-			//Debug.Log(string.Format("{0} | Connected : {1} | PoseValid : {2} | OpticalTracking : {3} | IsTracked : {4}", 
-			//	name, pIsConnected, pIsPoseValid, pIsOpticallyTracked, isTracked));
+			bool isPosValid, isRotValid;
+			_trackingStateWatcher.Update(out isPosValid, out isRotValid, pIsConnected, pIsPoseValid, pIsOpticallyTracked, pDeltaTime, imuOnlyReliablePositionDuration);
+			//Debug.Log(string.Format("{0} | Connected : {1} | PoseValid : {2} | OpticalTracking : {3} | PosOK : {4} | RotOK : {5}",
+			//	name, pIsConnected, pIsPoseValid, pIsOpticallyTracked, isPosValid, isRotValid));
 
-			// Warn if tracked state changed.
-			if ((IsTracked != isTracked) && (TrackedStateChanged != null))
+			// Warn for states changed.
+			// POSITION
+			if (PositionValid != isPosValid)
 			{
-				TrackedStateChanged(isTracked);
+				PositionValid = isPosValid;
+				if (PositionValidChanged != null)
+				{
+					PositionValidChanged(isPosValid);
+				}
+				//Debug.Log(string.Format("{0} | PosOK : {1}", name, isPosValid));
 			}
-			IsTracked = isTracked;
+			// ROTATION
+			if (RotationValid != isRotValid)
+			{
+				RotationValid = isRotValid;
+				if(RotationValidChanged != null)
+				{
+					RotationValidChanged(isRotValid);
+				}
+				//Debug.Log(string.Format("{0} | RotOK : {1}", name, isRotValid));
+			}
 
-			// Update only if the tracker is tracked.
-			// This way, the tracker keeps its last transform when the tracking is lost (better than a reset of the transform).
-			if (isTracked)
+			// Update only if the tracker is reliably tracked.
+			// This way, the tracker keeps its last transform when the tracking is lost (better than using unreliable values).
+			// POSITION
+			if (isPosValid)
+			{
+				_transform.localPosition = pLocalPosition;
+			}
+			// ROTATION
+			if(isRotValid)
 			{
 				if (_calibrate)
 				{
@@ -101,7 +131,6 @@ namespace ViveTrackers
 						Calibrated(this);
 					}
 				}
-				_transform.localPosition = pLocalPosition;
 				_transform.localRotation = pLocalRotation * _trackerRotationOffset;
 			}
 		}
