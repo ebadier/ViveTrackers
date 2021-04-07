@@ -29,6 +29,8 @@ namespace ViveTrackers
 	/// </summary>
 	public abstract class ViveTrackersManagerBase : MonoBehaviour
 	{
+		public const string CalibrationFileFormat = "{0};{1};{2};{3};{4}";
+
 		[Tooltip("Template used to instantiate available trackers")]
 		public ViveTracker prefab;
 		[Tooltip("The origin of the tracking space (+ used as the default rotation to calibrate Trackers' rotations")]
@@ -80,11 +82,14 @@ namespace ViveTrackers
 			// Overwrite any existing file.
 			using (StreamWriter writer = new StreamWriter(calibFilePath, false, Encoding.Default))
 			{
+				// Write Header
+				writer.WriteLine(string.Format(CalibrationFileFormat, "Name", "qx", "qy", "qz", "qw"));
+				// Write Data
 				Quaternion calib;
 				foreach (ViveTracker tracker in _trackers)
 				{
 					calib = tracker.Calibration;
-					writer.WriteLine(string.Format("{0};{1};{2};{3};{4}", tracker.name, calib.x, calib.y, calib.z, calib.w));
+					writer.WriteLine(string.Format(CalibrationFileFormat, tracker.name, calib.x, calib.y, calib.z, calib.w));
 				}
 			}
 			Debug.Log("[ViveTrackersManagerBase] " + _trackers.Count + " trackers calibrations saved to file : " + calibFilePath);
@@ -101,11 +106,13 @@ namespace ViveTrackers
 			{
 				using (StreamReader reader = File.OpenText(calibFilePath))
 				{
+					// Read Header
+					string line = reader.ReadLine();
+					char separator = line.Contains(";") ? ';' : ',';
 					// Read Data
-					string line;
 					while ((line = reader.ReadLine()) != null)
 					{
-						string[] items = line.Split(';');
+						string[] items = line.Split(separator);
 						string trackerName = items[0];
 						// Set Calibration to the existing tracker.
 						ViveTracker tracker = _trackers.Find(trckr => trckr.name == trackerName);

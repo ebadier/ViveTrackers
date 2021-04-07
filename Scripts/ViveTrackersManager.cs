@@ -62,12 +62,14 @@ namespace ViveTrackers
 			{
 				// Read Header
 				string line = reader.ReadLine();
+				char separator = line.Contains(";") ? ';' : ',';
 				// Read Data
 				while ((line = reader.ReadLine()) != null)
 				{
-					string[] items = line.Split(';');
-					if (!items[0].Contains("#"))
+					// # is used to comment line
+					if (!line.StartsWith("#", System.StringComparison.InvariantCulture))
 					{
+						string[] items = line.Split(separator);
 						_declaredTrackers.Add(items[0], items[1]);
 					}
 				}
