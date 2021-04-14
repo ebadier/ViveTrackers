@@ -82,6 +82,7 @@ namespace ViveTrackers
 			{
 				Color color = Random.ColorHSV();
 				viveTracker.debugTransform.Init(viveTracker.name, color, _mainCameraTransform);
+				viveTracker.ConnectedStatusChanged += _OnTrackerConnectedStatusChanged;
 				viveTracker.Calibrated += _OnTrackerCalibrated;
 				// Attach a sphere to the tracker.
 				GameObject renderer = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -96,6 +97,18 @@ namespace ViveTrackers
 		private void _OnTrackerCalibrated(ViveTracker pTracker)
 		{
 			Debug.Log("[ViveTrackersTest] ViveTracker " + pTracker.name + " calibrated.");
+		}
+
+		private void _OnTrackerConnectedStatusChanged(ViveTracker pTracker)
+		{
+			if(pTracker.Connected)
+			{
+				Debug.Log("[ViveTrackersTest] ViveTracker " + pTracker.name + " connected.");
+			}
+			else
+			{
+				Debug.LogWarning("[ViveTrackersTest] ViveTracker " + pTracker.name + " disconnected !");
+			}
 		}
 	}
 }

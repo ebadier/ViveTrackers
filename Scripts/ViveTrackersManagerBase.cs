@@ -100,10 +100,10 @@ namespace ViveTrackers
 		/// </summary>
 		public void LoadTrackersCalibrations()
 		{
-			int successCount = 0;
-			// Read calib file
 			if(File.Exists(calibFilePath))
 			{
+				int successCount = 0;
+				// Read calib file
 				using (StreamReader reader = File.OpenText(calibFilePath))
 				{
 					// Read Header
@@ -127,8 +127,12 @@ namespace ViveTrackers
 						}
 					}
 				}
+				Debug.Log("[ViveTrackersManagerBase.LoadTrackersCalibrations()] " + successCount + " trackers calibrations loaded from file : " + calibFilePath);
 			}
-			Debug.Log("[ViveTrackersManagerBase] " + successCount + " trackers calibrations loaded from file : " + calibFilePath);
+			else
+			{
+				Debug.LogWarning("[ViveTrackersManagerBase.LoadTrackersCalibrations()] file not found : " + calibFilePath + " !");
+			}
 		}
 	}
 }

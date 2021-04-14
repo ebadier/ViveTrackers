@@ -57,24 +57,34 @@ namespace ViveTrackers
 
 		private void Awake()
 		{
-			// Read config file
-			using (StreamReader reader = File.OpenText(configFilePath))
+			if (createDeclaredTrackersOnly)
 			{
-				// Read Header
-				string line = reader.ReadLine();
-				char separator = line.Contains(";") ? ';' : ',';
-				// Read Data
-				while ((line = reader.ReadLine()) != null)
+				if (File.Exists(configFilePath))
 				{
-					// # is used to comment line
-					if (!line.StartsWith("#", System.StringComparison.InvariantCulture))
+					// Read config file
+					using (StreamReader reader = File.OpenText(configFilePath))
 					{
-						string[] items = line.Split(separator);
-						_declaredTrackers.Add(items[0], items[1]);
+						// Read Header
+						string line = reader.ReadLine();
+						char separator = line.Contains(";") ? ';' : ',';
+						// Read Data
+						while ((line = reader.ReadLine()) != null)
+						{
+							// # is used to comment line
+							if (!line.StartsWith("#", System.StringComparison.InvariantCulture))
+							{
+								string[] items = line.Split(separator);
+								_declaredTrackers.Add(items[0], items[1]);
+							}
+						}
 					}
+					Debug.Log("[ViveTrackersManager] " + _declaredTrackers.Count + " trackers declared in config file : " + configFilePath);
+				}
+				else
+				{
+					Debug.LogWarning("[ViveTrackersManager] config file not found : " + configFilePath + " !");
 				}
 			}
-			Debug.Log("[ViveTrackersManager] " + _declaredTrackers.Count + " trackers declared in config file : " + configFilePath);
 		}
 
 		/// <summary>

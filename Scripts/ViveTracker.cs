@@ -45,19 +45,71 @@ namespace ViveTrackers
 		[Tooltip("The duration a tracker's position can be considered as reliably tracked with IMU tracking only (no optical tracking). Use min value for data analysis purpose, and up to max value for gameplay purpose.")]
 		public float imuOnlyReliablePositionDuration = ImuOnlyMinDuration;
 		public DebugTransform debugTransform;
+		
 		public ViveTrackerID ID { get; private set; }
-		public bool PositionValid { get; private set; }
-		public bool RotationValid { get; private set; }
+		
+		public bool Connected 
+		{ 
+			get { return _connected; } 
+			private set
+			{
+				if(_connected != value)
+				{
+					_connected = value;
+					if(ConnectedStatusChanged != null)
+					{
+						ConnectedStatusChanged(this);
+					}
+				}
+			}
+		}
+
+		public bool PositionValid 
+		{ 
+			get { return _positionValid; }
+			private set
+			{
+				if(_positionValid != value)
+				{
+					_positionValid = value;
+					if(PositionValidChanged != null)
+					{
+						PositionValidChanged(this);
+					}
+				}
+			}
+		}
+
+		public bool RotationValid 
+		{
+			get { return _rotationValid; }
+			private set
+			{
+				if(_rotationValid != value)
+				{
+					_rotationValid = value;
+					if(RotationValidChanged != null)
+					{
+						RotationValidChanged(this);
+					}
+				}
+			}
+		}
+
 		public Quaternion Calibration
 		{
 			get { return _trackerRotationOffset; }
 			set { _trackerRotationOffset = value; }
 		}
 
-		public Action<bool> PositionValidChanged;
-		public Action<bool> RotationValidChanged;
+		public Action<ViveTracker> ConnectedStatusChanged;
+		public Action<ViveTracker> PositionValidChanged;
+		public Action<ViveTracker> RotationValidChanged;
 		public Action<ViveTracker> Calibrated;
 
+		private bool _connected = false;
+		private bool _positionValid = false;
+		private bool _rotationValid = false;
 		private bool _calibrate = false;
 		private Transform _transform = null;
 		private Quaternion _trackerRotationOffset = Quaternion.identity;
@@ -66,7 +118,7 @@ namespace ViveTrackers
 		public void Init(ViveTrackerID pID, string pName)
 		{
 			_transform = transform;
-			PositionValid = RotationValid = false;
+			Connected = PositionValid = RotationValid = false;
 			ID = pID;
 			name = pName;
 		}
@@ -90,26 +142,9 @@ namespace ViveTrackers
 			//	name, pIsConnected, pIsPoseValid, pIsOpticallyTracked, isPosValid, isRotValid));
 
 			// Warn for states changed.
-			// POSITION
-			if (PositionValid != isPosValid)
-			{
-				PositionValid = isPosValid;
-				if (PositionValidChanged != null)
-				{
-					PositionValidChanged(isPosValid);
-				}
-				//Debug.Log(string.Format("{0} | PosOK : {1}", name, isPosValid));
-			}
-			// ROTATION
-			if (RotationValid != isRotValid)
-			{
-				RotationValid = isRotValid;
-				if(RotationValidChanged != null)
-				{
-					RotationValidChanged(isRotValid);
-				}
-				//Debug.Log(string.Format("{0} | RotOK : {1}", name, isRotValid));
-			}
+			Connected = pIsConnected;
+			PositionValid = isPosValid;
+			RotationValid = isRotValid;
 
 			// Update only if the tracker is reliably tracked.
 			// This way, the tracker keeps its last transform when the tracking is lost (better than using unreliable values).
