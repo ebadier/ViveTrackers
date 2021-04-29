@@ -40,20 +40,21 @@ namespace ViveTrackers
 		private List<float> _trackerSpeeds = new List<float>();
 
 		private List<Transform> _waypoints;
+		private GameObject _parentWaypoints;
 
 		private void Awake()
 		{
 			_waypoints = new List<Transform>();
-			GameObject parentWaypoints = new GameObject("Waypoints");
-			parentWaypoints.transform.parent = origin.transform;
-			parentWaypoints.transform.localPosition = Vector3.zero;
-			parentWaypoints.transform.localRotation = Quaternion.identity;
+			_parentWaypoints = new GameObject("Waypoints");
+			_parentWaypoints.transform.parent = origin.transform;
+			_parentWaypoints.transform.localPosition = Vector3.zero;
+			_parentWaypoints.transform.localRotation = Quaternion.identity;
 			for (float angle = 0f; angle < 360f; angle += 10f)
 			{
 				float radians = angle * Mathf.Deg2Rad;
 				Vector2 dir = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians)).normalized * areaRadius;
 				GameObject wayPoint = new GameObject(string.Format("Waypoint_{0:0}", angle));
-				wayPoint.transform.parent = parentWaypoints.transform;
+				wayPoint.transform.parent = _parentWaypoints.transform;
 				wayPoint.transform.localPosition = new Vector3(dir.x, targetsHeight, dir.y);
 				wayPoint.transform.localRotation = Quaternion.identity;
 				_waypoints.Add(wayPoint.transform);
@@ -66,23 +67,24 @@ namespace ViveTrackers
 		public override void UpdateTrackers(float pDeltaTime)
 		{
 			float sqrAreaRadius = areaRadius * areaRadius;
-			Vector3 volumeCenter = new Vector3(0f, targetsHeight, 0f);
-			Vector3 dir, motion;
+			Vector3 volumeCenter = _parentWaypoints.transform.position;
+			Vector3 dir, move;
 			Vector3 pos, newPos;
-			for(int i = 0; i <  _trackers.Count; ++i)
+			for (int i = 0; i < _trackers.Count; ++i)
 			{
-				dir = _trackers[i].transform.localRotation * Vector3.forward;
-				pos = _trackers[i].transform.localPosition;
+				// move direction is : rotation - calibration (rotation offset).
+				dir = Quaternion.Inverse(_trackers[i].Calibration) * _trackers[i].transform.forward;
+				pos = _trackers[i].transform.position;
 				dir = _NextTrackerDirection(i, pos, dir, pDeltaTime);
-				motion = dir * _trackerSpeeds[i] * pDeltaTime;
-				newPos = pos + motion;
+				move = dir * _trackerSpeeds[i] * pDeltaTime;
+				newPos = pos + move;
 				// Check if target will be out of bounds.
 				if ((newPos - volumeCenter).sqrMagnitude > sqrAreaRadius)
 				{
 					// If yes, invert direction.
 					dir = -dir;
-					motion = -motion;
-					newPos = pos + motion;
+					// And stay at current position until next frame.
+					newPos = pos;
 				}
 				_trackers[i].UpdateState(true, true, true, newPos, Quaternion.LookRotation(dir, Vector3.up), pDeltaTime);
 			}
@@ -139,7 +141,7 @@ namespace ViveTrackers
 				_trackerElapsedTimes[pTrackerIndex] = 0f;
 				_trackerDurations[pTrackerIndex] = Random.Range(minDuration, maxDuration);
 				_trackerSpeeds[pTrackerIndex] = Random.Range(minSpeed, maxSpeed);
-				Vector3 randomTarget = _waypoints[Random.Range(0, _waypoints.Count)].localPosition;
+				Vector3 randomTarget = _waypoints[Random.Range(0, _waypoints.Count)].position;
 				dir = (randomTarget - pCurrentPos).normalized;
 			}
 			return dir;

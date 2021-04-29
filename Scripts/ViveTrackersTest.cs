@@ -96,7 +96,7 @@ namespace ViveTrackers
 
 		private void _OnTrackerCalibrated(ViveTracker pTracker)
 		{
-			Debug.Log("[ViveTrackersTest] ViveTracker " + pTracker.name + " calibrated.");
+			Debug.Log("[ViveTrackersTest] ViveTracker " + pTracker.name + " calibrated (calibration = rotation offset from World.forward).");
 		}
 
 		private void _OnTrackerConnectedStatusChanged(ViveTracker pTracker)
