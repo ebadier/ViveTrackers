@@ -6,7 +6,7 @@
 - A simulator, to develop without having a Vive tracking system connected
 - Real-time pre-processing of tracking data to avoid noises in trajectories
 - A complete test scene to understand the use of the library
-- Some [documentation](Doc/ViveTrackersDocumentation.pdf) to setup Unity3D, SteamVR and Windows to get the best tracking quality from your Vive Trackers
+- Some [documentation](Doc/ViveTrackersDocumentation.pdf) to setup Unity3D, SteamVR (with & without HMD) and Windows to get the best tracking quality from your Vive Trackers
 
 ## Getting Started
 #### 1. Open SteamVR, configure your tracking space, connect your Vive Trackers, and leave SteamVR running in the background.
