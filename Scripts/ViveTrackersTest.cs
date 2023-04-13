@@ -84,6 +84,15 @@ namespace ViveTrackers
 				viveTracker.debugTransform.Init(viveTracker.name, color, _mainCameraTransform);
 				viveTracker.ConnectedStatusChanged += _OnTrackerConnectedStatusChanged;
 				viveTracker.Calibrated += _OnTrackerCalibrated;
+				// Buttons
+				viveTracker.GripPressed += _OnGripPressed;
+				viveTracker.GripReleased += _OnGripReleased;
+				viveTracker.TriggerPressed += _OnTriggerPressed;
+				viveTracker.TriggerReleased += _OnTriggerReleased;
+				viveTracker.TouchPadPressed += _OnTouchPadPressed;
+				viveTracker.TouchPadReleased += _OnTouchPadReleased;
+				viveTracker.MenuPressed += _OnMenuPressed;
+				viveTracker.MenuReleased += _OnMenuReleased;
 				// Attach a sphere to the tracker.
 				GameObject renderer = GameObject.CreatePrimitive(PrimitiveType.Sphere);
 				renderer.transform.parent = viveTracker.transform;
@@ -96,7 +105,7 @@ namespace ViveTrackers
 
 		private void _OnTrackerCalibrated(ViveTracker pTracker)
 		{
-			Debug.Log("[ViveTrackersTest] ViveTracker " + pTracker.name + " calibrated (calibration = rotation offset from World.forward).");
+			Debug.Log("[ViveTrackersTest] ViveTracker " + pTracker.name + " calibrated (calibration = rotation offset from Origin's transform).");
 		}
 
 		private void _OnTrackerConnectedStatusChanged(ViveTracker pTracker)
@@ -109,6 +118,46 @@ namespace ViveTrackers
 			{
 				Debug.LogWarning("[ViveTrackersTest] ViveTracker " + pTracker.name + " disconnected !");
 			}
+		}
+
+		private void _OnGripPressed(ViveTracker pTracker)
+		{
+			Debug.Log("[ViveTrackersTest] ViveTracker " + pTracker.name + " GRIP pressed.");
+		}
+
+		private void _OnGripReleased(ViveTracker pTracker)
+		{
+			Debug.Log("[ViveTrackersTest] ViveTracker " + pTracker.name + " GRIP released.");
+		}
+
+		private void _OnTriggerPressed(ViveTracker pTracker)
+		{
+			Debug.Log("[ViveTrackersTest] ViveTracker " + pTracker.name + " TRIGGER pressed.");
+		}
+
+		private void _OnTriggerReleased(ViveTracker pTracker)
+		{
+			Debug.Log("[ViveTrackersTest] ViveTracker " + pTracker.name + " TRIGGER released.");
+		}
+
+		private void _OnTouchPadPressed(ViveTracker pTracker)
+		{
+			Debug.Log("[ViveTrackersTest] ViveTracker " + pTracker.name + " TOUCHPAD pressed.");
+		}
+
+		private void _OnTouchPadReleased(ViveTracker pTracker)
+		{
+			Debug.Log("[ViveTrackersTest] ViveTracker " + pTracker.name + " TOUCHPAD released.");
+		}
+
+		private void _OnMenuPressed(ViveTracker pTracker)
+		{
+			Debug.Log("[ViveTrackersTest] ViveTracker " + pTracker.name + " MENU pressed.");
+		}
+
+		private void _OnMenuReleased(ViveTracker pTracker)
+		{
+			Debug.Log("[ViveTrackersTest] ViveTracker " + pTracker.name + " MENU released.");
 		}
 	}
 }

@@ -86,7 +86,7 @@ namespace ViveTrackers
 					// And stay at current position until next frame.
 					newPos = pos;
 				}
-				_trackers[i].UpdateState(true, true, true, newPos, Quaternion.LookRotation(dir, Vector3.up), pDeltaTime);
+				_trackers[i].UpdatePose(true, true, true, newPos, Quaternion.LookRotation(dir, Vector3.up), pDeltaTime);
 			}
 		}
 

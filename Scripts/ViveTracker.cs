@@ -18,6 +18,7 @@
 
 using System;
 using UnityEngine;
+using Valve.VR;
 
 namespace ViveTrackers
 {
@@ -45,7 +46,8 @@ namespace ViveTrackers
 		[Tooltip("The duration a tracker's position can be considered as reliably tracked with IMU tracking only (no optical tracking). Use min value for data analysis purpose, and up to max value for gameplay purpose.")]
 		public float imuOnlyReliablePositionDuration = ImuOnlyMinDuration;
 		public DebugTransform debugTransform;
-		
+
+		#region Properties
 		public ViveTrackerID ID { get; private set; }
 		
 		public bool Connected 
@@ -102,11 +104,100 @@ namespace ViveTrackers
 			set { _trackerRotationOffset = value; }
 		}
 
+		public bool GripState
+		{
+			get { return _gripState; }
+			private set
+			{
+				bool previousGripState = _gripState;
+				_gripState = value;
+
+				if ((!previousGripState) && _gripState && (GripPressed != null))
+				{
+					GripPressed(this);
+				}
+				else if (previousGripState && (!_gripState) && (GripReleased != null))
+				{
+					GripReleased(this);
+				}
+			}
+		}
+
+		public bool TriggerState
+		{
+			get { return _triggerState; }
+			private set
+			{
+				bool previousTriggerState = _triggerState;
+				_triggerState = value;
+
+				if ((!previousTriggerState) && _triggerState && (TriggerPressed != null))
+				{
+					TriggerPressed(this);
+				}
+				else if (previousTriggerState && (!_triggerState) && (TriggerReleased != null))
+				{
+					TriggerReleased(this);
+				}
+			}
+		}
+
+		public bool TouchPadState
+		{
+			get { return _touchPadState; }
+			private set
+			{
+				bool previousTouchPadState = _touchPadState;
+				_touchPadState = value;
+
+				if ((!previousTouchPadState) && _touchPadState && (TouchPadPressed != null))
+				{
+					TouchPadPressed(this);
+				}
+				else if (previousTouchPadState && (!_touchPadState) && (TouchPadReleased != null))
+				{
+					TouchPadReleased(this);
+				}
+			}
+		}
+
+		public bool MenuState
+		{
+			get { return _menuState; }
+			private set
+			{
+				bool previousMenuState = _menuState;
+				_menuState = value;
+
+				if ((!previousMenuState) && _menuState && (MenuPressed != null))
+				{
+					MenuPressed(this);
+				}
+				else if (previousMenuState && (!_menuState) && (MenuReleased != null))
+				{
+					MenuReleased(this);
+				}
+			}
+		}
+		#endregion
+
+		#region Actions
 		public Action<ViveTracker> ConnectedStatusChanged;
 		public Action<ViveTracker> PositionValidChanged;
 		public Action<ViveTracker> RotationValidChanged;
 		public Action<ViveTracker> Calibrated;
+		// Buttons
+		public Action<ViveTracker> GripPressed;
+		public Action<ViveTracker> GripReleased;
+		public Action<ViveTracker> TriggerPressed;
+		public Action<ViveTracker> TriggerReleased;
+		public Action<ViveTracker> TouchPadPressed;
+		public Action<ViveTracker> TouchPadReleased;
+		public Action<ViveTracker> MenuPressed;
+		public Action<ViveTracker> MenuReleased;
+		#endregion
 
+		#region Private Attributes
 		private bool _connected = false;
 		private bool _positionValid = false;
 		private bool _rotationValid = false;
@@ -114,11 +205,21 @@ namespace ViveTrackers
 		private Transform _transform = null;
 		private Quaternion _trackerRotationOffset = Quaternion.identity;
 		private ViveTrackingStateWatcher _trackingStateWatcher = new ViveTrackingStateWatcher();
+		// Buttons
+		private bool _gripState = false;
+		private bool _triggerState = false;
+		private bool _touchPadState = false;
+		private bool _menuState = false;
+		private uint _packetNum = 0u;
+		#endregion
 
+		#region Public Methods
 		public void Init(ViveTrackerID pID, string pName)
 		{
 			_transform = transform;
 			Connected = PositionValid = RotationValid = false;
+			GripState = TriggerState = TouchPadState = MenuState = false;
+			_packetNum = 0u;
 			ID = pID;
 			name = pName;
 		}
@@ -132,9 +233,9 @@ namespace ViveTrackers
 		}
 
 		/// <summary>
-		/// Update ViveTracker.
+		/// Update ViveTracker Pose.
 		/// </summary>
-		public void UpdateState(bool pIsConnected, bool pIsPoseValid, bool pIsOpticallyTracked, Vector3 pLocalPosition, Quaternion pLocalRotation, float pDeltaTime)
+		public void UpdatePose(bool pIsConnected, bool pIsPoseValid, bool pIsOpticallyTracked, Vector3 pLocalPosition, Quaternion pLocalRotation, float pDeltaTime)
 		{
 			bool isPosValid, isRotValid;
 			_trackingStateWatcher.Update(out isPosValid, out isRotValid, pIsConnected, pIsPoseValid, pIsOpticallyTracked, pDeltaTime, imuOnlyReliablePositionDuration);
@@ -169,5 +270,28 @@ namespace ViveTrackers
 				_transform.localRotation = pLocalRotation * _trackerRotationOffset;
 			}
 		}
+
+		/// <summary>
+		/// Update ViveTracker Buttons (Pogo Pins).
+		/// 2 – Ground
+		/// 3 – Grip
+		/// 4 – Trigger
+		/// 5 – Touchpad
+		/// 6 – Menu Button
+		/// https://dl.vive.com/Tracker/Guideline/HTC%20Vive%20Tracker%20(3.0)%20Developer%20Guidelines_v1.0_01182021.pdf
+		/// </summary>
+		public void UpdateButtons(uint pPacketNum, ulong pButtonsState)
+		{
+			if(pPacketNum != _packetNum) // check if new packet
+			{
+				_packetNum = pPacketNum;
+				GripState = (pButtonsState & (1ul << (int)EVRButtonId.k_EButton_Grip)) != 0;
+				TriggerState = (pButtonsState & (1ul << (int)EVRButtonId.k_EButton_SteamVR_Trigger)) != 0;
+				TouchPadState = (pButtonsState & (1ul << (int)EVRButtonId.k_EButton_SteamVR_Touchpad)) != 0;
+				MenuState = (pButtonsState & (1ul << (int)EVRButtonId.k_EButton_ApplicationMenu)) != 0;
+			}
+		}
+
+		#endregion
 	}
 }
