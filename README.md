@@ -21,7 +21,7 @@
 - The update of all ViveTrackers (position, rotation, and optionally buttons) happens at the first line in [ViveTrackersTest.Update()](Scripts/ViveTrackersTest.cs#L52-L77), see [ViveTrackersManager.UpdateTrackers()](Scripts/ViveTrackersManager.cs#L98-L125) for more details.
 - ViveTrackersManager contains a list of all connected ViveTrackers.
 - Optionally, ViveTrackersManager can create only a restricted set of ViveTrackers declared in the file [ViveTrackers.csv](Scripts/ViveTrackers.csv) (see [documentation/"Keep Vive Trackers identification consistent during runtime"](Doc/ViveTrackersDocumentation.pdf)).
-- To log your Vive Trackers serial numbers in the console, ensure ViveTrackersManager.logTrackersDetection is enabled in Unity editor.
+- To log your ViveTrackers serial numbers in the console, ensure ViveTrackersManager.logTrackersDetection is enabled in Unity editor.
 - You can access the last position/rotation of ViveTrackers using their transform.localPosition/localRotation.
 - You can also register to some [actions](Scripts/ViveTracker.cs#L190-L197) to know if the pogo-pins corresponding to Grip/Trigger/TouchPad/Menu buttons are pressed or released.
 
