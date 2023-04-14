@@ -18,7 +18,7 @@
 - **F6** : save the last calibration.
 - **F7** : load the last calibration.
 #### 4. Understanding the code: 
-- The update of all ViveTrackers (position, rotation, and optionally buttons) happens at the first line in [ViveTrackersTest.Update()](Scripts/ViveTrackersTest.cs#L52-L77), see [ViveTrackersManager.UpdateTrackers()](Scripts/ViveTrackersManager.cs#L98-L125) for more details.
+- The update of all ViveTrackers (position, rotation, and optionally buttons) happens at the first line in [ViveTrackersTest.Update()](Scripts/ViveTrackersTest.cs#L52-L77), see [ViveTrackersManager.UpdateTrackers()](Scripts/ViveTrackersManager.cs#L117-L144) for more details.
 - ViveTrackersManager contains a list of all connected ViveTrackers.
 - Optionally, ViveTrackersManager can create only a restricted set of ViveTrackers declared in the file [ViveTrackers.csv](Scripts/ViveTrackers.csv) (see [documentation/"Keep Vive Trackers identification consistent during runtime"](Doc/ViveTrackersDocumentation.pdf)).
 - To log your ViveTrackers serial numbers in the console, ensure ViveTrackersManager.logTrackersDetection is enabled in Unity editor.
