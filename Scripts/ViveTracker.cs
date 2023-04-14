@@ -282,13 +282,16 @@ namespace ViveTrackers
 		/// </summary>
 		public void UpdateButtons(uint pPacketNum, ulong pButtonsState)
 		{
-			if(pPacketNum != _packetNum) // check if new packet
+			//Debug.Log("[ViveTracker.UpdateButtons()] PacketNum : " + pPacketNum);
+			//Debug.Log("[ViveTracker.UpdateButtons()] ButtonsState : " + pButtonsState);
+			if (pPacketNum != _packetNum) // Check if new packet
 			{
 				_packetNum = pPacketNum;
-				GripState = (pButtonsState & (1ul << (int)EVRButtonId.k_EButton_Grip)) != 0;
-				TriggerState = (pButtonsState & (1ul << (int)EVRButtonId.k_EButton_SteamVR_Trigger)) != 0;
-				TouchPadState = (pButtonsState & (1ul << (int)EVRButtonId.k_EButton_SteamVR_Touchpad)) != 0;
-				MenuState = (pButtonsState & (1ul << (int)EVRButtonId.k_EButton_ApplicationMenu)) != 0;
+				GripState = (pButtonsState & (1ul << (int)EVRButtonId.k_EButton_Grip)) != 0ul;
+				TriggerState = (pButtonsState & (1ul << (int)EVRButtonId.k_EButton_SteamVR_Trigger)) != 0ul;
+				TouchPadState = (pButtonsState & (1ul << (int)EVRButtonId.k_EButton_SteamVR_Touchpad)) != 0ul;
+				MenuState = (pButtonsState & (1ul << (int)EVRButtonId.k_EButton_ApplicationMenu)) != 0ul;
+				//Debug.Log(string.Format("[ViveTracker.UpdateButtons()] Grip {0} | Trigger {1} | TouchPad {2} | MenuState {3}", GripState, TriggerState, TouchPadState, MenuState));
 			}
 		}
 
