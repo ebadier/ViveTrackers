@@ -54,6 +54,7 @@ MonoBehaviour:
   prefab: {fileID: 114684623029943448, guid: 83a7a9dced192ca42bd5354aad2d6f6c, type: 2}
   origin: {fileID: 0}
   calibFilePath: ViveTrackers_Calibrations.csv
-  configFilePath: ./Assets/Externals/ViveTrackers/Scripts/ViveTrackers.csv
+  configFilePath: ./Assets/ViveTrackers/Scripts/ViveTrackers.csv
   createDeclaredTrackersOnly: 0
   logTrackersDetection: 1
+  enableButtons: 0

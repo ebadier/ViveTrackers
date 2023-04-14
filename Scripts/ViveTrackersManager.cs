@@ -57,11 +57,14 @@ namespace ViveTrackers
 		// Poses for all tracked devices in OpenVR (HMDs, controllers, trackers, etc...).
 		private TrackedDevicePose_t[] _ovrTrackedDevicePoses = new TrackedDevicePose_t[OpenVR.k_unMaxTrackedDeviceCount];
 		// Cached variable to get ViveTracker buttons.
-		private VRControllerState_t _ovrControllerState = new VRControllerState_t();
-		static readonly uint VRControllerStateSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(typeof(VRControllerState_t_Packed));
+		private VRControllerState_t _ovrControllerState;
+		private uint _ovrControllerStateSize;
 
 		private void Awake()
 		{
+			_ovrControllerState = new VRControllerState_t();
+			_ovrControllerStateSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(_ovrControllerState);
+
 			if (createDeclaredTrackersOnly)
 			{
 				if (File.Exists(configFilePath))
@@ -92,6 +95,22 @@ namespace ViveTrackers
 			}
 		}
 
+		private void OnApplicationQuit()
+		{
+			if (_ovrInit)
+			{
+				_cvrSystem.AcknowledgeQuit_Exiting();
+			}
+		}
+
+		private void OnDestroy()
+		{
+			if (_ovrInit)
+			{
+				OpenVR.Shutdown();
+			}
+		}
+
 		/// <summary>
 		/// Update ViveTracker transforms using the corresponding Vive Tracker devices.
 		/// </summary>
@@ -110,15 +129,15 @@ namespace ViveTrackers
 				// Apply poses to ViveTracker objects.
 				TrackedDevicePose_t pose = _ovrTrackedDevicePoses[tracker.ID.trackedDevice_Index];
 				SteamVR_Utils.RigidTransform rigidTransform = new SteamVR_Utils.RigidTransform(pose.mDeviceToAbsoluteTracking);
-				tracker.UpdatePose(pose.bDeviceIsConnected, pose.bPoseIsValid, (pose.eTrackingResult == ETrackingResult.Running_OK), 
+				tracker.UpdatePose(pose.bDeviceIsConnected, pose.bPoseIsValid, (pose.eTrackingResult == ETrackingResult.Running_OK),
 					rigidTransform.pos, rigidTransform.rot, pDeltaTime);
 
-				if(enableButtons)
+				if (enableButtons)
 				{
 					// Update ViveTracker Buttons (Pogo Pins)
-					// TODO : Test if GetControllerState() affects the result GetDeviceToAbsoluteTrackingPose() as mentioned here :
+					// Be careful: GetControllerState() affects the result of GetDeviceToAbsoluteTrackingPose() as mentioned here :
 					// https://github.com/ValveSoftware/openvr/issues/883
-					_cvrSystem.GetControllerState(tracker.ID.trackedDevice_Index, ref _ovrControllerState, VRControllerStateSize);
+					_cvrSystem.GetControllerState(tracker.ID.trackedDevice_Index, ref _ovrControllerState, _ovrControllerStateSize);
 					tracker.UpdateButtons(_ovrControllerState.unPacketNum, _ovrControllerState.ulButtonPressed);
 				}
 			}
