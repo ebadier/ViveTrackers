@@ -242,5 +242,31 @@ namespace ViveTrackers
 			}
 			return sn;
 		}
+
+		// Some OpenVR Tests
+		//private void Update()
+		//{
+		//	if(_ovrInit)
+		//	{
+		//		// Works
+		//		float timeSinceLastVSync = 0f;
+		//		ulong frameNum = 0;
+		//		if (_cvrSystem.GetTimeSinceLastVsync(ref timeSinceLastVSync, ref frameNum))
+		//		{
+		//			Debug.LogFormat("[OpenVR] TimeSinceLastVsync: {0:f6} | #Frame: {1}", timeSinceLastVSync, frameNum);
+		//		}
+
+		//		// Sounds like Compositor doesn't work using null driver.
+		//		Compositor_FrameTiming frameTiming = new Compositor_FrameTiming();
+		//		if (OpenVR.Compositor.GetFrameTiming(ref frameTiming, 1))
+		//		{
+		//			Debug.LogFormat("[OpenVR.Compositor] #Frame: {0}", frameTiming.m_nFrameIndex); // Always 0
+		//		}
+		//		Debug.LogFormat("[OpenVR.Compositor] Frame Time Remaining: {0}", OpenVR.Compositor.GetFrameTimeRemaining()); // increasing negative value ??
+
+		//		Debug.LogFormat("[OpenVR.Compositor] Can render scene: {0}", OpenVR.Compositor.CanRenderScene()); // True
+		//		Debug.LogFormat("[OpenVR] Display on desktop: {0}", _cvrSystem.IsDisplayOnDesktop()); // True
+		//	}
+		//}
 	}
 }
