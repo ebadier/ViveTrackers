@@ -35,6 +35,8 @@ namespace ViveTrackers
 		[Range(1f, 10f)]
 		public float areaRadius = 3f;
 
+		private List<bool> _trackerDoingHalfTurn = new List<bool>();
+		private List<Vector3> _trackerTargetDirections = new List<Vector3>();
 		private List<float> _trackerElapsedTimes = new List<float>();
 		private List<float> _trackerDurations = new List<float>();
 		private List<float> _trackerSpeeds = new List<float>();
@@ -68,25 +70,15 @@ namespace ViveTrackers
 		{
 			float sqrAreaRadius = areaRadius * areaRadius;
 			Vector3 volumeCenter = _parentWaypoints.transform.position;
-			Vector3 dir, move;
+			Vector3 dir, newDir;
 			Vector3 pos, newPos;
 			for (int i = 0; i < _trackers.Count; ++i)
 			{
 				// move direction is : rotation - calibration (rotation offset).
 				dir = Quaternion.Inverse(_trackers[i].Calibration) * _trackers[i].transform.forward;
 				pos = _trackers[i].transform.position;
-				dir = _NextTrackerDirection(i, pos, dir, pDeltaTime);
-				move = dir * _trackerSpeeds[i] * pDeltaTime;
-				newPos = pos + move;
-				// Check if target will be out of bounds.
-				if ((newPos - volumeCenter).sqrMagnitude > sqrAreaRadius)
-				{
-					// If yes, invert direction.
-					dir = -dir;
-					// And stay at current position until next frame.
-					newPos = pos;
-				}
-				_trackers[i].UpdatePose(true, true, true, newPos, Quaternion.LookRotation(dir, Vector3.up), pDeltaTime);
+				_NextTrackerPose(i, pos, dir, volumeCenter, sqrAreaRadius, pDeltaTime, out newPos, out newDir);
+				_trackers[i].UpdatePose(true, true, true, newPos, Quaternion.LookRotation(newDir, Vector3.up), pDeltaTime);
 			}
 		}
 
@@ -101,8 +93,10 @@ namespace ViveTrackers
 				Destroy(tracker.gameObject);
 			}
 			_trackers.Clear();
-			_trackerDurations.Clear();
+			_trackerDoingHalfTurn.Clear();
+			_trackerTargetDirections.Clear();
 			_trackerElapsedTimes.Clear();
+			_trackerDurations.Clear();
 			_trackerSpeeds.Clear();
 
 			Debug.Log("[ViveTrackersManagerFake] Generating fake Tracker devices...");
@@ -113,8 +107,10 @@ namespace ViveTrackers
 				ViveTracker vt = Instantiate<ViveTracker>(prefab, origin.transform.TransformPoint(startPos), Quaternion.identity, origin.transform);
 				vt.Init(new ViveTrackerID((uint)_trackers.Count, trackerName.ToString()), trackerName.ToString());
 				_trackers.Add(vt);
-				_trackerDurations.Add(0f);
+				_trackerDoingHalfTurn.Add(false);
+				_trackerTargetDirections.Add(Vector3.forward);
 				_trackerElapsedTimes.Add(0f);
+				_trackerDurations.Add(0f);
 				_trackerSpeeds.Add(Random.Range(minSpeed, maxSpeed));
 			}
 
@@ -131,20 +127,36 @@ namespace ViveTrackers
 			}
 		}
 
-		private Vector3 _NextTrackerDirection(int pTrackerIndex, Vector3 pCurrentPos, Vector3 pCurrentDir, float pDt)
+		private void _NextTrackerPose(int pTrackerIndex, Vector3 pCurrentPos, Vector3 pCurrentDir, Vector3 pVolumeCenter, float pSqrAreaRadius, float pDt, out Vector3 pNewPos, out Vector3 pNewDir)
 		{
-			Vector3 dir = pCurrentDir;
 			_trackerElapsedTimes[pTrackerIndex] += pDt;
-			if(_trackerElapsedTimes[pTrackerIndex] >= _trackerDurations[pTrackerIndex])
+			if (_trackerElapsedTimes[pTrackerIndex] >= _trackerDurations[pTrackerIndex])
 			{
-				// Direction change needed.
+				Vector3 randomTarget = _waypoints[Random.Range(0, _waypoints.Count)].position;
+				_trackerTargetDirections[pTrackerIndex] = (randomTarget - pCurrentPos).normalized;
 				_trackerElapsedTimes[pTrackerIndex] = 0f;
 				_trackerDurations[pTrackerIndex] = Random.Range(minDuration, maxDuration);
 				_trackerSpeeds[pTrackerIndex] = Random.Range(minSpeed, maxSpeed);
-				Vector3 randomTarget = _waypoints[Random.Range(0, _waypoints.Count)].position;
-				dir = (randomTarget - pCurrentPos).normalized;
+				_trackerDoingHalfTurn[pTrackerIndex] = false;
 			}
-			return dir;
+
+			pNewDir = Vector3.Lerp(pCurrentDir, _trackerTargetDirections[pTrackerIndex], _trackerElapsedTimes[pTrackerIndex] / _trackerDurations[pTrackerIndex]);
+			Vector3 move = pNewDir * _trackerSpeeds[pTrackerIndex] * pDt;
+			pNewPos = pCurrentPos + move;
+
+			// Check if a half-turn is needed
+			if ((!_trackerDoingHalfTurn[pTrackerIndex]) && ((pNewPos - pVolumeCenter).sqrMagnitude > pSqrAreaRadius))
+			{
+				_trackerTargetDirections[pTrackerIndex] = -pCurrentDir; // negate the direction that led us here.
+				_trackerElapsedTimes[pTrackerIndex] = 0f;
+				_trackerDoingHalfTurn[pTrackerIndex] = true;
+			}
+
+			if (_trackerDoingHalfTurn[pTrackerIndex])
+			{
+				pNewDir = Vector3.Lerp(pCurrentDir, _trackerTargetDirections[pTrackerIndex], _trackerElapsedTimes[pTrackerIndex] / _trackerDurations[pTrackerIndex]);
+				pNewPos = pCurrentPos; // Stay in place while half-turning
+			}
 		}
 	}
 }
