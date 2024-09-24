@@ -100,12 +100,13 @@ namespace ViveTrackers
 			_trackerSpeeds.Clear();
 
 			Debug.Log("[ViveTrackersManagerFake] Generating fake Tracker devices...");
-			for(char trackerName = 'A'; trackerName < 'I'; ++trackerName)
+			for(int i = 0; i < 8; ++i)
 			{
 				Vector2 pos = Random.insideUnitCircle * 0.5f;
 				Vector3 startPos = new Vector3(pos.x, targetsHeight, pos.y);
 				ViveTracker vt = Instantiate<ViveTracker>(prefab, origin.transform.TransformPoint(startPos), Quaternion.identity, origin.transform);
-				vt.Init(new ViveTrackerID((uint)_trackers.Count, trackerName.ToString()), trackerName.ToString());
+				string trackerName = i.ToString();
+				vt.Init(new ViveTrackerID((uint)i, trackerName), trackerName);
 				_trackers.Add(vt);
 				_trackerDoingHalfTurn.Add(false);
 				_trackerTargetDirections.Add(Vector3.forward);
