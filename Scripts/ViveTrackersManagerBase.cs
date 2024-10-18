@@ -54,12 +54,21 @@ namespace ViveTrackers
 		/// </summary>
 		public abstract void RefreshTrackers();
 
-		public void SetDebugActive(bool pActive)
-		{
-			origin.SetDebugActive(pActive);
+		public void SetDebugTextSize(float pSize)
+        {
+			origin.SetDebugTextSize(pSize);
 			foreach (ViveTracker tracker in _trackers)
 			{
-				tracker.debugTransform.SetDebugActive(pActive);
+				tracker.debugTransform.SetDebugTextSize(pSize);
+			}
+		}
+
+		public void SetDebugModelActive(bool pActive)
+		{
+			origin.SetDebugModelActive(pActive);
+			foreach (ViveTracker tracker in _trackers)
+			{
+				tracker.debugTransform.SetDebugModelActive(pActive);
 			}
 		}
 

@@ -44,7 +44,7 @@ namespace ViveTrackers
 				_activeViveTrackersManager = viveTrackersManager;
 				viveTrackersManagerFake.gameObject.SetActive(false);
 			}
-			_activeViveTrackersManager.origin.Init("O", Color.white, _mainCameraTransform);
+			_activeViveTrackersManager.origin.Init("O", "O", 0.02f, Color.white, Vector3.zero, _mainCameraTransform);
 			_activeViveTrackersManager.TrackersFound += _OnTrackersFound;
 			_activeViveTrackersManager.RefreshTrackers();
 		}
@@ -56,7 +56,7 @@ namespace ViveTrackers
 			if (Input.GetKeyUp(KeyCode.F1))
 			{
 				_debugActive = !_debugActive;
-				_activeViveTrackersManager.SetDebugActive(_debugActive);
+				_activeViveTrackersManager.SetDebugModelActive(_debugActive);
 			}
 			else if (Input.GetKeyUp(KeyCode.F5))
 			{
@@ -81,7 +81,7 @@ namespace ViveTrackers
 			foreach (ViveTracker viveTracker in pTrackers)
 			{
 				Color color = Random.ColorHSV();
-				viveTracker.debugTransform.Init(viveTracker.name, color, _mainCameraTransform);
+				viveTracker.debugTransform.Init(viveTracker.name, viveTracker.name, 0.02f, color, Vector3.zero, _mainCameraTransform);
 				viveTracker.ConnectedStatusChanged += _OnTrackerConnectedStatusChanged;
 				viveTracker.Calibrated += _OnTrackerCalibrated;
 				// Buttons

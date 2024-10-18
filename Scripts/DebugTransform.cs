@@ -1,7 +1,7 @@
 ﻿/******************************************************************************************************************************************************
 * MIT License																																		  *
 *																																					  *
-* Copyright (c) 2020																																  *
+* Copyright (c) 2024																																  *
 * Emmanuel Badier <emmanuel.badier@gmail.com>																										  *
 * 																																					  *
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),  *
@@ -29,21 +29,37 @@ public sealed class DebugTransform : MonoBehaviour
 	private Transform _debugTextTransform = null;
 	private Transform _billboardCameraTransform = null;
 
-	public void Init(string pName, Color pColor, Transform pBillboardCameraTransform)
+	public void Init(string pName, string pText, float pTextSize, Color pTextColor, Vector3 pTextOffset, Transform pBillboardCameraTransform)
 	{
 		name = pName;
-		_debugText.text = pName;
-		_debugText.color = pColor;
+		_debugText.text = pText;
+		_debugText.characterSize = pTextSize;
+		_debugText.color = pTextColor;
 		// Cached
 		_debugTextTransform = _debugText.transform;
+		_debugTextTransform.localPosition = pTextOffset;
 		_billboardCameraTransform = pBillboardCameraTransform;
 	}
 
-	public void SetDebugActive(bool pActive)
+	public void SetDebugText(string pText)
+    {
+		_debugText.text = pText;
+	}
+
+	public void SetDebugTextSize(float pSize)
+    {
+		_debugText.characterSize = pSize;
+	}
+
+	public void SetDebugTextActive(bool pActive)
 	{
 		_debugText.gameObject.SetActive(pActive);
-		_debugModel.gameObject.SetActive(pActive);
 		enabled = pActive;
+	}
+
+	public void SetDebugModelActive(bool pActive)
+    {
+		_debugModel.gameObject.SetActive(pActive);
 	}
 
 	private void Update()
