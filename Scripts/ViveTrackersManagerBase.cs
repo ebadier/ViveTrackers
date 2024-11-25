@@ -73,6 +73,14 @@ namespace ViveTrackers
 		}
 
 		/// <summary>
+		/// Align a trackers' transformation with origin's transformation.
+		/// </summary>
+		public void CalibrateTracker(int pTrackerIndex)
+        {
+			_trackers[pTrackerIndex].Calibrate();
+		}
+
+		/// <summary>
 		/// Align all trackers' transformation with origin's transformation.
 		/// </summary>
 		public void CalibrateTrackers()
