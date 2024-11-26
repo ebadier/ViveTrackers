@@ -110,7 +110,7 @@ namespace ViveTrackers
 
 		private void _OnTrackerConnectedStatusChanged(ViveTracker pTracker)
 		{
-			if(pTracker.Connected)
+			if(pTracker.IsConnected)
 			{
 				Debug.Log("[ViveTrackersTest] ViveTracker " + pTracker.name + " connected.");
 			}

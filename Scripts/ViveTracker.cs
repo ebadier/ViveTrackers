@@ -50,14 +50,14 @@ namespace ViveTrackers
 		#region Properties
 		public ViveTrackerID ID { get; private set; }
 		
-		public bool Connected 
+		public bool IsConnected 
 		{ 
-			get { return _connected; } 
+			get { return _isConnected; } 
 			private set
 			{
-				if(_connected != value)
+				if(_isConnected != value)
 				{
-					_connected = value;
+					_isConnected = value;
 					if(ConnectedStatusChanged != null)
 					{
 						ConnectedStatusChanged(this);
@@ -66,14 +66,14 @@ namespace ViveTrackers
 			}
 		}
 
-		public bool PositionValid 
+		public bool IsPositionValid 
 		{ 
-			get { return _positionValid; }
+			get { return _isPositionValid; }
 			private set
 			{
-				if(_positionValid != value)
+				if(_isPositionValid != value)
 				{
-					_positionValid = value;
+					_isPositionValid = value;
 					if(PositionValidChanged != null)
 					{
 						PositionValidChanged(this);
@@ -82,14 +82,14 @@ namespace ViveTrackers
 			}
 		}
 
-		public bool RotationValid 
+		public bool IsRotationValid 
 		{
-			get { return _rotationValid; }
+			get { return _isRotationValid; }
 			private set
 			{
-				if(_rotationValid != value)
+				if(_isRotationValid != value)
 				{
-					_rotationValid = value;
+					_isRotationValid = value;
 					if(RotationValidChanged != null)
 					{
 						RotationValidChanged(this);
@@ -98,11 +98,21 @@ namespace ViveTrackers
 			}
 		}
 
+		public bool IsCalibrated { get { return _isCalibrated; } }
+
 		public Quaternion Calibration
-		{
-			get { return _trackerRotationOffset; }
-			set { _trackerRotationOffset = value; }
-		}
+        {
+			get { return _calibration; }
+			set
+            {
+				_calibration = value;
+				_isCalibrated = true;
+				if (Calibrated != null)
+				{
+					Calibrated(this);
+				}
+			}
+        }
 
 		public bool GripState
 		{
@@ -198,12 +208,13 @@ namespace ViveTrackers
 		#endregion
 
 		#region Private Attributes
-		private bool _connected = false;
-		private bool _positionValid = false;
-		private bool _rotationValid = false;
-		private bool _calibrate = false;
+		private bool _isConnected = false;
+		private bool _isPositionValid = false;
+		private bool _isRotationValid = false;
+		private bool _isCalibrated = false;
+		private Quaternion _calibration = Quaternion.identity;
+		private Quaternion _lastValidLocalRotation = Quaternion.identity;
 		private Transform _transform = null;
-		private Quaternion _trackerRotationOffset = Quaternion.identity;
 		private ViveTrackingStateWatcher _trackingStateWatcher = new ViveTrackingStateWatcher();
 		// Buttons
 		private bool _gripState = false;
@@ -217,7 +228,7 @@ namespace ViveTrackers
 		public void Init(ViveTrackerID pID, string pName)
 		{
 			_transform = transform;
-			Connected = PositionValid = RotationValid = false;
+			IsConnected = IsPositionValid = IsRotationValid = false;
 			GripState = TriggerState = TouchPadState = MenuState = false;
 			_packetNum = 0u;
 			ID = pID;
@@ -229,7 +240,7 @@ namespace ViveTrackers
 		/// </summary>
 		public void Calibrate()
 		{
-			_calibrate = true;
+			Calibration = Quaternion.Inverse(_lastValidLocalRotation);
 		}
 
 		/// <summary>
@@ -243,9 +254,9 @@ namespace ViveTrackers
 			//	name, pIsConnected, pIsPoseValid, pIsOpticallyTracked, isPosValid, isRotValid));
 
 			// Warn for states changed.
-			Connected = pIsConnected;
-			PositionValid = isPosValid;
-			RotationValid = isRotValid;
+			IsConnected = pIsConnected;
+			IsPositionValid = isPosValid;
+			IsRotationValid = isRotValid;
 
 			// Update only if the tracker is reliably tracked.
 			// This way, the tracker keeps its last transform when the tracking is lost (better than using unreliable values).
@@ -257,17 +268,8 @@ namespace ViveTrackers
 			// ROTATION
 			if(isRotValid)
 			{
-				if (_calibrate)
-				{
-					_trackerRotationOffset = Quaternion.Inverse(pLocalRotation);
-					_calibrate = false;
-
-					if (Calibrated != null)
-					{
-						Calibrated(this);
-					}
-				}
-				_transform.localRotation = pLocalRotation * _trackerRotationOffset;
+				_lastValidLocalRotation = pLocalRotation;
+				_transform.localRotation = pLocalRotation * _calibration;
 			}
 		}
 
