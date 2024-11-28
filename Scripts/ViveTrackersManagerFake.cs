@@ -1,7 +1,7 @@
 ﻿/******************************************************************************************************************************************************
 * MIT License																																		  *
 *																																					  *
-* Copyright (c) 2020																																  *
+* Copyright (c) 2024																																  *
 * Emmanuel Badier <emmanuel.badier@gmail.com>																										  *
 * 																																					  *
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),  *
@@ -36,27 +36,22 @@ namespace ViveTrackers
 		public float areaRadius = 3f;
 
 		private List<bool> _trackerDoingHalfTurn = new List<bool>();
-		private List<Vector3> _trackerTargetDirections = new List<Vector3>();
+		private List<Vector3> _trackerTargetLocalDirections = new List<Vector3>();
 		private List<float> _trackerElapsedTimes = new List<float>();
 		private List<float> _trackerDurations = new List<float>();
 		private List<float> _trackerSpeeds = new List<float>();
 
 		private List<Transform> _waypoints;
-		private GameObject _parentWaypoints;
 
 		private void Awake()
 		{
 			_waypoints = new List<Transform>();
-			_parentWaypoints = new GameObject("Waypoints");
-			_parentWaypoints.transform.parent = origin.transform;
-			_parentWaypoints.transform.localPosition = Vector3.zero;
-			_parentWaypoints.transform.localRotation = Quaternion.identity;
 			for (float angle = 0f; angle < 360f; angle += 10f)
 			{
 				float radians = angle * Mathf.Deg2Rad;
 				Vector2 dir = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians)).normalized * areaRadius;
 				GameObject wayPoint = new GameObject(string.Format("Waypoint_{0:0}", angle));
-				wayPoint.transform.parent = _parentWaypoints.transform;
+				wayPoint.transform.parent = origin.transform; // same origin as Trackers
 				wayPoint.transform.localPosition = new Vector3(dir.x, targetsHeight, dir.y);
 				wayPoint.transform.localRotation = Quaternion.identity;
 				_waypoints.Add(wayPoint.transform);
@@ -69,16 +64,14 @@ namespace ViveTrackers
 		public override void UpdateTrackers(float pDeltaTime)
 		{
 			float sqrAreaRadius = areaRadius * areaRadius;
-			Vector3 volumeCenter = _parentWaypoints.transform.position;
-			Vector3 dir, newDir;
-			Vector3 pos, newPos;
+			Vector3 localDir, newLocalDir;
+			Vector3 localPos, newLocalPos;
 			for (int i = 0; i < _trackers.Count; ++i)
 			{
-				// move direction is : rotation - calibration (rotation offset).
-				dir = Quaternion.Inverse(_trackers[i].Calibration) * _trackers[i].transform.forward;
-				pos = _trackers[i].transform.position;
-				_NextTrackerPose(i, pos, dir, volumeCenter, sqrAreaRadius, pDeltaTime, out newPos, out newDir);
-				_trackers[i].UpdatePose(true, true, true, newPos, Quaternion.LookRotation(newDir, Vector3.up), pDeltaTime);
+				localDir = Quaternion.Inverse(_trackers[i].Calibration) * _trackers[i].transform.localRotation * Vector3.forward;
+				localPos = _trackers[i].transform.localPosition;
+				_NextTrackerPose(i, localPos, localDir, sqrAreaRadius, pDeltaTime, out newLocalPos, out newLocalDir);
+				_trackers[i].UpdatePose(true, true, true, newLocalPos, Quaternion.LookRotation(newLocalDir, Vector3.up), pDeltaTime);
 			}
 		}
 
@@ -94,7 +87,7 @@ namespace ViveTrackers
 			}
 			_trackers.Clear();
 			_trackerDoingHalfTurn.Clear();
-			_trackerTargetDirections.Clear();
+			_trackerTargetLocalDirections.Clear();
 			_trackerElapsedTimes.Clear();
 			_trackerDurations.Clear();
 			_trackerSpeeds.Clear();
@@ -109,7 +102,7 @@ namespace ViveTrackers
 				vt.Init(new ViveTrackerID((uint)i, trackerName), trackerName);
 				_trackers.Add(vt);
 				_trackerDoingHalfTurn.Add(false);
-				_trackerTargetDirections.Add(Vector3.forward);
+				_trackerTargetLocalDirections.Add(Vector3.forward);
 				_trackerElapsedTimes.Add(0f);
 				_trackerDurations.Add(0f);
 				_trackerSpeeds.Add(Random.Range(minSpeed, maxSpeed));
@@ -128,35 +121,35 @@ namespace ViveTrackers
 			}
 		}
 
-		private void _NextTrackerPose(int pTrackerIndex, Vector3 pCurrentPos, Vector3 pCurrentDir, Vector3 pVolumeCenter, float pSqrAreaRadius, float pDt, out Vector3 pNewPos, out Vector3 pNewDir)
+		private void _NextTrackerPose(int pTrackerIndex, Vector3 pCurrentLocalPos, Vector3 pCurrentLocalDir, float pSqrAreaRadius, float pDt, out Vector3 pNewLocalPos, out Vector3 pNewLocalDir)
 		{
 			_trackerElapsedTimes[pTrackerIndex] += pDt;
 			if (_trackerElapsedTimes[pTrackerIndex] >= _trackerDurations[pTrackerIndex])
 			{
-				Vector3 randomTarget = _waypoints[Random.Range(0, _waypoints.Count)].position;
-				_trackerTargetDirections[pTrackerIndex] = (randomTarget - pCurrentPos).normalized;
+				Vector3 randomLocalTarget = _waypoints[Random.Range(0, _waypoints.Count)].localPosition;
+				_trackerTargetLocalDirections[pTrackerIndex] = (randomLocalTarget - pCurrentLocalPos).normalized;
 				_trackerElapsedTimes[pTrackerIndex] = 0f;
 				_trackerDurations[pTrackerIndex] = Random.Range(minDuration, maxDuration);
 				_trackerSpeeds[pTrackerIndex] = Random.Range(minSpeed, maxSpeed);
 				_trackerDoingHalfTurn[pTrackerIndex] = false;
 			}
 
-			pNewDir = Vector3.Lerp(pCurrentDir, _trackerTargetDirections[pTrackerIndex], _trackerElapsedTimes[pTrackerIndex] / _trackerDurations[pTrackerIndex]);
-			Vector3 move = pNewDir * _trackerSpeeds[pTrackerIndex] * pDt;
-			pNewPos = pCurrentPos + move;
+			pNewLocalDir = Vector3.Lerp(pCurrentLocalDir, _trackerTargetLocalDirections[pTrackerIndex], _trackerElapsedTimes[pTrackerIndex] / _trackerDurations[pTrackerIndex]);
+			Vector3 move = pNewLocalDir * _trackerSpeeds[pTrackerIndex] * pDt;
+			pNewLocalPos = pCurrentLocalPos + move;
 
 			// Check if a half-turn is needed
-			if ((!_trackerDoingHalfTurn[pTrackerIndex]) && ((pNewPos - pVolumeCenter).sqrMagnitude > pSqrAreaRadius))
+			if ((!_trackerDoingHalfTurn[pTrackerIndex]) && (pNewLocalPos.sqrMagnitude > pSqrAreaRadius))
 			{
-				_trackerTargetDirections[pTrackerIndex] = -pCurrentDir; // negate the direction that led us here.
+				_trackerTargetLocalDirections[pTrackerIndex] = -pCurrentLocalDir; // negate the direction that led us here.
 				_trackerElapsedTimes[pTrackerIndex] = 0f;
 				_trackerDoingHalfTurn[pTrackerIndex] = true;
 			}
 
 			if (_trackerDoingHalfTurn[pTrackerIndex])
 			{
-				pNewDir = Vector3.Lerp(pCurrentDir, _trackerTargetDirections[pTrackerIndex], _trackerElapsedTimes[pTrackerIndex] / _trackerDurations[pTrackerIndex]);
-				pNewPos = pCurrentPos; // Stay in place while half-turning
+				pNewLocalDir = Vector3.Lerp(pCurrentLocalDir, _trackerTargetLocalDirections[pTrackerIndex], _trackerElapsedTimes[pTrackerIndex] / _trackerDurations[pTrackerIndex]);
+				pNewLocalPos = pCurrentLocalPos; // Stay in place while half-turning
 			}
 		}
 	}
